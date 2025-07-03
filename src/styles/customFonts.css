@@ -1,0 +1,10 @@
+/* 여기에는 외부에서 다운받은 폰트를 추가해줍니다. */
+@font-face {
+    font-family: 'Oswald';
+    src: url('../assets/font/Oswald/Oswald-VariableFont_wght.ttf');
+}
+
+@font-face {
+    font-family: 'Noto_Sans_KR';
+    src: url('../assets/font/Noto_Sans_KR/NotoSansKR-VariableFont_wght.ttf');
+}

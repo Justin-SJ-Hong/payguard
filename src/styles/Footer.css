@@ -1,0 +1,10 @@
+footer {
+    color: #19764D;
+    height: 100px;
+    font-family: 'Oswald'
+}
+
+.tos, .policy {
+    font-family: 'Noto_Sans_KR';
+    font-weight: bold;
+}
