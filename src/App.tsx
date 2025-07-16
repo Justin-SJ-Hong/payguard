@@ -8,6 +8,9 @@ import Header from '../src/components/Header';
 import Footer from './components/Footer';
 import { createTheme } from '@mui/material/styles';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+
 
 function App() {
   const [count, setCount] = useState(100)
@@ -30,18 +33,20 @@ function App() {
   }, []);
 
   const initialOptions = {
-    clientId: "AeS8mtOAguro4R81KMYyr214qLUCH8z8J5-j2WtqgITyOhyGIW0Ww7wLuu69sdDCyHXm5GKV8Yh9t-tG"
+    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID
   }
 
   return (
     <>
       <PayPalScriptProvider options={initialOptions}>
-        <Header />
-        <main className='main overflow-y-auto relative'>
-          <img src="/payguard.png" alt="페이가드" className='background-logo fixed z-0 pointer-events-none max-w-96 max-h-96' />
-          <Outlet />
-        </main>
-        <Footer />
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Header />
+          <main className='main overflow-y-auto relative'>
+            <img src="/payguard.png" alt="페이가드" className='background-logo fixed z-0 pointer-events-none max-w-96 max-h-96' />
+            <Outlet />
+          </main>
+          <Footer />
+        </LocalizationProvider>
       </PayPalScriptProvider>
     </>
   )
