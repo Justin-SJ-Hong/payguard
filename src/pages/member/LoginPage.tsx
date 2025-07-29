@@ -1,17 +1,19 @@
 import { supabase } from '../../lib/supabase';
-import { useDispatch } from 'react-redux';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { login } from '../../store/userSlice';
 import { PayPalButtons } from '@paypal/react-paypal-js';
+import { useUserStore } from '../../store/userStore';
 
 import { Box, Button, TextField, Typography, Link, Stack, Checkbox, FormControlLabel } from '@mui/material';
 
 import {useState} from 'react';
 
 export default function LoginPage() {
-  const dispatch = useDispatch();
+  const login = useUserStore((state) => state.login);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const params = new URLSearchParams(location.search);
+  const redirect = params.get("redirect");
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,19 +26,30 @@ export default function LoginPage() {
     //   navigate('/dashboard'); // 로그인 성공 후 대시보드로 이동
     // }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // const { data, error } = await supabase.auth.signInWithPassword({
+    //   email,
+    //   password,
+    // });
 
-    if (error) {
-      alert('로그인 실패: ' + error.message);
-      return;
+    // if (error) {
+    //   alert('로그인 실패: ' + error.message);
+    //   return;
+    // }
+
+    // const user = data.user;
+    // dispatch(login({ userName: user?.email || '사용자' }));
+    // navigate(from, { replace: true });
+    try {
+      await login(email, password);
+      if (redirect) {
+        navigate(`/proposals/${redirect}`, { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
+      // navigate(from, { replace: true });
+    } catch (error: any) {
+      alert('로그인 실패: ' + (error?.message || ''));
     }
-
-    const user = data.user;
-    dispatch(login({ userName: user?.email || '사용자' }));
-    navigate(from, { replace: true });
   };
 
   return (

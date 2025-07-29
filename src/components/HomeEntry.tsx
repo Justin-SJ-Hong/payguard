@@ -1,10 +1,9 @@
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
 import { Navigate } from 'react-router-dom';
 import LandingPage from './LandingPage';
+import { useUserStore } from '../store/userStore';
 
 export default function HomeEntry() {
-  const isLoggedIn = useSelector((state: RootState) => state.user.isLoggedIn);
+  const isLoggedIn = !!useUserStore((state) => state.user);
 
   return isLoggedIn ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 }

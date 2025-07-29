@@ -6,20 +6,25 @@ import {
   Box,
   Typography,
   TextField,
+  Divider,
   Button,
   Checkbox,
   FormControlLabel,
-  Grid,
   Paper,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
+  CircularProgress,
+  Alert,
+  Snackbar,
 } from "@mui/material";
 
 // 선불, 후불, 중간지급 합계 검증 컴포넌트
 import TotalSplitValidator from "../../components/TotalSplitValidator";
-import PlatformTagsController from "../../components/PlatformTagsController";
+import PlatformController from "../../components/PlatformController";
+import ToolController from "../../components/ToolController";
+
 
 // 날짜 검증 컴포넌트
 import DateConsistencyValidator from "../../components/DateConsistencyValidator";
@@ -33,10 +38,15 @@ import formatNumber from '../../utils/formatNumber';
 import SplitRatioValidator from '../../utils/splitRatioValidator';
 
 import { useProposalStore } from '../../store/proposalStore';
+import { emailService, ProposalEmailData } from '../../services/emailService';
+import { supabase } from '../../lib/supabase';
 
 import { FormData } from "../../type/proposal";
 
 function Proposal() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const methods = useForm<FormData>({
     defaultValues: {
@@ -54,9 +64,187 @@ function Proposal() {
     formState: { errors },
   } = methods;
 
-  const onSubmit = (data: any) => {
-    console.log("제출된 제안:", data);
-    // TODO: 서버에 전송
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      console.log("제출된 제안:", data);
+      
+      // 제안서 데이터를 Supabase에 저장
+      // 1. 제안서 메인 데이터 저장
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // profiles 테이블에서 사용자 정보 가져오기
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', user?.id)
+        .single();
+
+      const { data: proposalData, error: dbError } = await supabase
+        .from('proposals')
+        .insert([{
+          sender_name: profile?.name || user?.email || '이름 미확인',
+          sender_email: user?.email,
+          client_name: data.clientName,
+          email: data.email,
+          title: data.title,
+          description: data.description,
+          start_date: data.workPeriod?.start,
+          end_date: data.workPeriod?.end,
+          total_amount: data.totalAmount,
+          currency: data.currency || 'USD ($)',
+          prepay_ratio: data.prepayRatio,
+          postpay_ratio: data.postpayRatio,
+          use_midpay: data.useMidpay,
+          midpay_count: data.midpayCount,
+          first_pay_date: data.firstPayDate,
+          last_pay_date: data.lastPayDate,
+          // midpay_amounts: data.midpayAmounts,
+          scope: data.scope,
+          message: data.message,
+          terms: data.terms,
+          user_id: user?.id,
+          status: 'pending'
+        }])
+        .select()
+        .single();
+
+      if (dbError) {
+        throw new Error('제안서 저장에 실패했습니다: ' + dbError.message);
+      }
+
+      const proposalId = proposalData.id;
+
+      // 2. 중간지급 데이터 저장
+      if (data.useMidpay && (data.midpayAmounts ?? []).length > 0) {
+        const midpayData = (data.midpayAmounts ?? []).map((item, index) => ({
+          proposal_id: proposalId,
+          pay_order: index + 1,
+          amount: Number(item?.amount) || 0,
+          pay_date: item?.date || new Date().toISOString().split('T')[0]
+        }));
+
+        if(midpayData.length > 0) {
+          const { error: midpayError } = await supabase
+            .from('proposal_midpays')
+            .insert(midpayData);
+
+          if (midpayError) {
+            throw new Error('중간지급 데이터 저장에 실패했습니다: ' + midpayError.message);
+          }
+        }
+      }
+
+      // 3. 플랫폼 데이터 저장
+      if ((data.platforms ?? []).length > 0) {
+        const platformData = (data.platforms ?? []).map(platform => ({
+          proposal_id: proposalId,
+          platform
+        }));
+
+        const { error: platformError } = await supabase
+          .from('proposal_platforms')
+          .insert(platformData);
+
+        if (platformError) {
+          throw new Error('플랫폼 데이터 저장에 실패했습니다: ' + platformError.message);
+        }
+      }
+
+      // 4. 도구 데이터 저장
+      if ((data.tools ?? []).length > 0) {
+        const toolData = (data.tools ?? []).map(tool => ({
+          proposal_id: proposalId,
+          tool
+        }));
+
+        const { error: toolError } = await supabase
+          .from('proposal_tools')
+          .insert(toolData);
+
+        if (toolError) {
+          throw new Error('도구 데이터 저장에 실패했습니다: ' + toolError.message);
+        }
+      }
+
+      // 5. 첨부파일 저장 (Storage + DB)
+      if ((data.attachments ?? []).length > 0) {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id;
+
+        for (const file of (data.attachments ?? [])) {
+          // Storage에 파일 업로드
+          const filePath = `${userId}/${proposalId}/${file.name}`;
+          const { error: uploadError } = await supabase.storage
+            .from('proposal-attachments')
+            .upload(filePath, file);
+
+          if (uploadError) {
+            throw new Error('파일 업로드에 실패했습니다: ' + uploadError.message);
+          }
+
+          // 파일 URL 생성
+          const { data: { publicUrl } } = supabase.storage
+            .from('proposal-attachments')
+            .getPublicUrl(filePath);
+
+          // DB에 첨부파일 메타데이터 저장
+          const { error: attachmentError } = await supabase
+            .from('proposal_attachments')
+            .insert([{
+              proposal_id: proposalId,
+              file_url: publicUrl,
+              file_name: file.name,
+              file_type: file.type,
+              uploaded_at: new Date().toISOString()
+            }]);
+
+          if (attachmentError) {
+            throw new Error('첨부파일 메타데이터 저장에 실패했습니다: ' + attachmentError.message);
+          }
+        }
+      }
+
+      // 이메일 전송 데이터 준비
+      const emailData: ProposalEmailData = {
+        clientName: data.clientName,
+        clientEmail: data.email,
+        title: data.title,
+        description: data.description || '',
+        startDate: data.workPeriod?.start || '',
+        endDate: data.workPeriod?.end || '',
+        totalAmount: data.totalAmount || 0,
+        currency: data.currency || 'USD ($)',
+        prepayRatio: data.prepayRatio || 0,
+        postpayRatio: data.postpayRatio || 0,
+        useMidpay: data.useMidpay || false,
+        midpayCount: data.midpayCount,
+        midpayAmounts: data.midpayAmounts?.map(item => ({ amount: Number(item?.amount) || 0, date: item?.date || '' })) || [],
+        scope: data.scope || '',
+        message: data.message,
+        attachments: data.attachments,
+        previewUrl: `${window.location.origin}/proposals/${proposalId}`,
+      };
+
+      // 이메일 전송
+      await emailService.sendProposalEmail(emailData);
+      
+      setEmailSent(true);
+      methods.reset();
+      
+      // 성공 메시지 표시 후 대시보드로 이동
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 2000);
+      
+    } catch (err) {
+      console.error('제안서 전송 실패:', err);
+      setError(err instanceof Error ? err.message : '제안서 전송에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // 실시간으로 중간 지급 횟수 감시
@@ -115,9 +303,9 @@ function Proposal() {
                 <TextField
                   fullWidth
                   label="이름"
-                  {...register("name", { required: "이름은 필수입니다" })}
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
+                  {...register("clientName", { required: "이름은 필수입니다" })}
+                  error={!!errors.clientName}
+                  helperText={errors.clientName?.message}
                 />
               </Box>
               <Box className="flex-1">
@@ -163,7 +351,9 @@ function Proposal() {
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               🧰 계약 대상 플랫폼/도구
             </Typography>
-            <PlatformTagsController />
+            {/* <PlatformTagsController /> */}
+            <PlatformController />
+            <ToolController />
           </Paper>
 
           <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
@@ -412,11 +602,11 @@ function Proposal() {
             )}
             
           </Paper>
-          {useMidpay && midpayCount > 0 && (
+          {useMidpay && (midpayCount ?? 0) > 0 && (
             <Paper variant="outlined" sx={{ p: 3, mb: 3 }}>
               <RenderMidpayFields
                 currency={watch("currency")}
-                midpayCount={midpayCount}
+                midpayCount={midpayCount ?? 0}
                 control={control}
                 errors={errors}
                 formatNumber={formatNumber}
@@ -482,13 +672,42 @@ function Proposal() {
           </Typography>
           <br />
           <Box display="flex" gap={10} justifyContent={"center"}>
-            <Button variant="contained" color="primary" onClick={handleSubmit(onSubmit)}>
-              제안 보내기
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+              startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
+            >
+              {isSubmitting ? '전송 중...' : '제안 보내기'}
             </Button>
-            <Button variant="outlined" color="secondary" type="reset">
+            <Button variant="outlined" color="secondary" type="reset" disabled={isSubmitting}>
               초기화
             </Button>
           </Box>
+
+          {/* 성공/실패 알림 */}
+          <Snackbar
+            open={emailSent}
+            autoHideDuration={6000}
+            onClose={() => setEmailSent(false)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          >
+            <Alert onClose={() => setEmailSent(false)} severity="success" sx={{ width: '100%' }}>
+              ✅ 제안서가 성공적으로 전송되었습니다!
+            </Alert>
+          </Snackbar>
+
+          <Snackbar
+            open={!!error}
+            autoHideDuration={6000}
+            onClose={() => setError(null)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          >
+            <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+              ❌ {error}
+            </Alert>
+          </Snackbar>
           <SplitRatioValidator />
           <TotalSplitValidator />
         </Box>

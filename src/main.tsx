@@ -4,9 +4,6 @@ import {
   Navigate
 } from "react-router-dom";
 
-import { Provider } from 'react-redux';
-import {store} from './store';
-
 import './styles/fonts.ts';
 
 import { StrictMode } from 'react'
@@ -63,7 +60,13 @@ const router = createBrowserRouter([
       {
         path: "proposals",
         children: [
-          { path: "new", element: <Proposal /> },
+          { 
+            path: "new", element: (
+              <ProtectedRoute>
+                <Proposal />
+              </ProtectedRoute>
+            )
+          },
           { path: ":id", element: <ProposalDetail /> },
         ],
       },
@@ -75,8 +78,6 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Provider store={store}>
-      <RouterProvider router={router} />
-    </Provider>
+    <RouterProvider router={router} />
   </StrictMode>
 )

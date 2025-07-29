@@ -1,26 +1,58 @@
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import { AppBar, Toolbar, Avatar, IconButton, Menu, MenuItem, Typography, Box, Button } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
 import '../styles/Header.css';
 
 import { supabase } from '../lib/supabase';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { logout } from '../store/userSlice';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useUserStore } from '../store/userStore';
 
 function Header() {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-
-    // 로그인 여부와 사용자 이름 (실제로는 props 또는 전역 상태로 처리)
-    // const isLoggedIn = true; // 로그인 상태라면 true
-    // const userName = '홍길동'; // 로그인된 사용자 이름
-
-    const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const { isLoggedIn, userName } = useSelector((state: RootState) => state.user);
+    // Zustand에서 유저 정보 읽기
+    const user = useUserStore((state) => state.user);
+    const clearUser = () => useUserStore.setState({ user: null });
+
+    const isLoggedIn = !!user;
+    const userName = user?.name || '';
+    const avatarUrl = user?.avatar_url || '/member-avatar.png';
+
+    // 계약서 메뉴 상태 (hover)
+    const [contractAnchorEl, setContractAnchorEl] = useState<null | HTMLElement>(null);
+    const isContractOpen = Boolean(contractAnchorEl);
+
+    // 아바타 메뉴 상태 (click)
+    const [avatarAnchorEl, setAvatarAnchorEl] = useState<null | HTMLElement>(null);
+    const isAvatarOpen = Boolean(avatarAnchorEl);
+
+    // hover용
+    const handleContractEnter = (event: React.MouseEvent<HTMLElement>) => {
+        setContractAnchorEl(event.currentTarget);
+    };
+    // const handleContractLeave = () => {
+    //     setTimeout(() => setContractAnchorEl(null), 0);
+    // };
+    // 마우스 나가면 일정 시간 후 닫기 (살짝 delay 줌)
+
+    const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const handleContractLeave = () => {
+        closeTimeoutRef.current = setTimeout(() => {
+            setContractAnchorEl(null);
+        }, 100); // 살짝 delay
+    };
+
+    const cancelClose = () => {
+        if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    };
+
+    // 클릭용
+    const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
+        setAvatarAnchorEl(event.currentTarget);
+    };
+    const handleAvatarClose = () => {
+        setAvatarAnchorEl(null);
+    };
 
     const handleLogoClick = () => {
         if (isLoggedIn) {
@@ -31,17 +63,13 @@ function Header() {
     };
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        dispatch(logout());
+        clearUser();
         handleClose();
         navigate('/');
     };
 
-    const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
     const handleClose = () => {
-        setAnchorEl(null);
+        setAvatarAnchorEl(null);
     };
     return (
         <>
@@ -58,12 +86,58 @@ function Header() {
                         </Typography>
                     </Box>
 
-                    {/* 메뉴 */}
+                    {/* 메뉴 영역 */}
                     <Box className="hidden md:flex gap-16 w-5/10 justify-center">
-                        <Button variant="text" sx={{ color: '#19764D', fontWeight: 'bold', fontSize: 24 }} onClick={() => navigate('/contracts')}>계약현황</Button>
-                        <Button variant="text" sx={{ color: '#19764D', fontWeight: 'bold', fontSize: 24 }} onClick={() => navigate('/clients')}>거래처</Button>
-                        <Button variant="text" sx={{ color: '#19764D', fontWeight: 'bold', fontSize: 24 }} onClick={() => navigate('/payments')}>입금내역</Button>
-                        <Button variant="text" sx={{ color: '#19764D', fontWeight: 'bold', fontSize: 24 }}>계약서</Button>
+                        <Button
+                            variant="text"
+                            sx={{ color: '#19764D', fontWeight: 'bold', fontSize: 24 }}
+                            onClick={() => navigate('/clients')}
+                        >
+                            거래처
+                        </Button>
+                        <Button
+                            variant="text"
+                            sx={{ color: '#19764D', fontWeight: 'bold', fontSize: 24 }}
+                            onClick={() => navigate('/payments')}
+                        >
+                            입금내역
+                        </Button>
+
+                        {/* 계약서 드롭다운 */}
+                        <Box
+                            onMouseEnter={(e) => {
+                                cancelClose();         // 마우스 다시 들어오면 닫힘 취소
+                                handleContractEnter(e);
+                            }}
+                            onMouseLeave={handleContractLeave}
+                        >
+                            <Button
+                                variant="text"
+                                sx={{ color: '#19764D', fontWeight: 'bold', fontSize: 24 }}
+                                aria-controls={isContractOpen ? 'contract-menu' : undefined}
+                                aria-haspopup="true"
+                            >
+                                계약
+                            </Button>
+
+                            <Menu
+                                id="contract-menu"
+                                anchorEl={contractAnchorEl}
+                                open={isContractOpen}
+                                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                                transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+                                slotProps={{
+                                    // 메뉴 안에서는 자동 닫힘 방지
+                                    list: {
+                                        onMouseEnter: cancelClose,
+                                        onMouseLeave: handleContractLeave,
+                                    }
+                                }}
+                            >
+                                <MenuItem onClick={() => navigate('/proposals/new')}>제안하기</MenuItem>
+                                <MenuItem onClick={() => navigate('/contracts')}>계약현황</MenuItem>
+                            </Menu>
+                        </Box>
                     </Box>
 
                     {/* 로그인 아바타 */}
@@ -71,35 +145,35 @@ function Header() {
                         {/* <Avatar sx={{ bgcolor: '#E0D7FF' }}>
                             <PersonIcon sx={{ color: '#5E3FFF' }} />
                         </Avatar> */}
-                        <Avatar src="/member-avatar.png" alt="avatar" />
+                        <Avatar src={avatarUrl} alt="avatar" />
                     </IconButton>
 
                     {/* 말풍선 메뉴 */}
                     <Menu
-                    open={open}
-                    anchorEl={anchorEl}
-                    onClose={handleClose}
+                    open={isAvatarOpen}
+                    anchorEl={avatarAnchorEl}
+                    onClose={handleAvatarClose}
                     slotProps={{
                         paper: {
-                        sx: {
-                            overflow: 'visible',
-                            px: 2,
-                            borderRadius: 2,
-                            minWidth: 160,
-                            bgcolor: '#D9D9D9',
-                            '&::before': {
-                            content: '""',
-                            display: 'block',
-                            position: 'absolute',
-                            top: 0,
-                            right: 20,
-                            width: 10,
-                            height: 10,
-                            bgcolor: '#D9D9D9',
-                            transform: 'translateY(-50%) rotate(45deg)',
-                            zIndex: 0,
+                            sx: {
+                                overflow: 'visible',
+                                px: 2,
+                                borderRadius: 2,
+                                minWidth: 160,
+                                bgcolor: '#D9D9D9',
+                                '&::before': {
+                                content: '""',
+                                display: 'block',
+                                position: 'absolute',
+                                top: 0,
+                                right: 20,
+                                width: 10,
+                                height: 10,
+                                bgcolor: '#D9D9D9',
+                                transform: 'translateY(-50%) rotate(45deg)',
+                                zIndex: 0,
+                                },
                             },
-                        },
                         },
                     }}
                     anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -108,9 +182,9 @@ function Header() {
                     {isLoggedIn
                         ? [
                             <Typography
-                            key="username"
-                            variant="subtitle2"
-                            className="text-center font-bold text-gray-800"
+                                key="username"
+                                variant="subtitle2"
+                                className="text-center font-bold text-gray-800"
                             >
                             {userName}
                             </Typography>,

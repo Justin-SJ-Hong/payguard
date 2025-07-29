@@ -1,11 +1,60 @@
-import React from 'react'
+import { AgGridReact } from 'ag-grid-react';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+
+import React, { useState, useEffect } from 'react'
 import { Box, Typography, Paper, Button, Grid } from '@mui/material';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../store';
+import { useUserStore } from '../../store/userStore';
+import { supabase } from '../../lib/supabase';
 
 
 export default function Dashboard() {
-  const userName = useSelector((state: RootState) => state.user.userName);
+  const userName = useUserStore((state) => state.user?.name || '');
+  const [emailStats, setEmailStats] = useState({ sent: 0, failed: 0 });
+  const [recentProposals, setRecentProposals] = useState<any[]>([]);
+  const [rowData, setRowData] = useState<any[]>([]);
+  const columnDefs = [ 
+    { headerName: '계약명', field: 'title', flex: 1 },
+    { headerName: '클라이언트명', field: 'client', flex: 1 },
+    { headerName: '상태', field: 'status', flex: 1 },
+    { headerName: '금액', field: 'amount', flex: 1, valueFormatter: (p: { value: number }) => `$${p.value}` },
+    { headerName: '마지막 정산일', field: 'lastDate', flex: 1 },
+  ];
+
+  ModuleRegistry.registerModules([ AllCommunityModule ]);
+
+  useEffect(() => {
+    // 오늘 발송된 이메일 통계 가져오기
+    const fetchEmailStats = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 실제 구현에서는 이메일 로그 테이블에서 가져와야 함
+      // 현재는 임시 데이터 사용
+      setEmailStats({ sent: 2, failed: 0 });
+    };
+
+    // 최근 제안서 가져오기
+    const fetchRecentProposals = async () => {
+      const { data, error } = await supabase
+        .from('proposals')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (data) {
+        setRecentProposals(data);
+      }
+    };
+
+    fetchEmailStats();
+    fetchRecentProposals();
+
+    setRowData([
+      { title: '디자인작업', client: 'John', status: '진행중', amount: 500, lastDate: '2025-06-04' },
+      { title: '개발 의뢰', client: 'Alice', status: '미입금', amount: 800, lastDate: '2025-06-03' },
+    ]);
+  }, []);
 
   const summaryItems = [
     { title: '총 계약 수', value: '12', color: 'text-green-600' },
@@ -23,32 +72,6 @@ export default function Dashboard() {
 
       {/* 요약 카드 */}
       <Typography variant="h6" className="font-bold mb-2">요약 카드</Typography>
-      {/* <Grid container spacing={2} className="mb-8">
-        <Grid item={true} xs={6} md={3}>
-          <Paper className="p-4 text-center" elevation={3}>
-            <Typography variant="subtitle2">총 계약 수</Typography>
-            <Typography variant="h6" className="text-green-600 font-bold">12</Typography>
-          </Paper>
-        </Grid>
-        <Grid item={true} xs={6} md={3}>
-          <Paper className="p-4 text-center" elevation={3}>
-            <Typography variant="subtitle2">미입금 계약 수</Typography>
-            <Typography variant="h6" className="text-red-600 font-bold">3</Typography>
-          </Paper>
-        </Grid>
-        <Grid item={true} xs={6} md={3}>
-          <Paper className="p-4 text-center" elevation={3}>
-            <Typography variant="subtitle2">총 입금 완료액</Typography>
-            <Typography variant="h6" className="text-amber-600 font-bold">$8,200.55</Typography>
-          </Paper>
-        </Grid>
-        <Grid item={true} xs={6} md={3}>
-          <Paper className="p-4 text-center" elevation={3}>
-            <Typography variant="subtitle2">미확인 입금건</Typography>
-            <Typography variant="h6" className="text-red-600 font-bold">1</Typography>
-          </Paper>
-        </Grid>
-      </Grid> */}
       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 4 }}>
         {summaryItems.map((item, idx) => (
           <Paper
@@ -67,45 +90,49 @@ export default function Dashboard() {
 
       {/* 최근 계약 리스트 */}
       <Typography variant="h6" className="font-bold mb-2">최근 계약 리스트</Typography>
-      <table className="w-full table-auto border mb-4 text-sm">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border px-2 py-1">계약명</th>
-            <th className="border px-2 py-1">클라이언트명</th>
-            <th className="border px-2 py-1">상태</th>
-            <th className="border px-2 py-1">금액</th>
-            <th className="border px-2 py-1">마지막 정산일</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="border px-2 py-1">디자인작업</td>
-            <td className="border px-2 py-1">John</td>
-            <td className="border px-2 py-1">진행중</td>
-            <td className="border px-2 py-1">$500.00</td>
-            <td className="border px-2 py-1">2025-06-04</td>
-          </tr>
-          <tr>
-            <td className="border px-2 py-1">개발 의뢰</td>
-            <td className="border px-2 py-1">Alice</td>
-            <td className="border px-2 py-1">미입금</td>
-            <td className="border px-2 py-1">$800.00</td>
-            <td className="border px-2 py-1">2025-06-03</td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="ag-theme-alpine" style={{ height: 250, width: '100%', marginBottom: 16 }}>
+        <AgGridReact
+          rowData={rowData}
+          columnDefs={columnDefs}
+          domLayout="autoHeight"
+          pagination={false}
+          suppressCellFocus={true}
+        />
+      </div>
       <Button variant="outlined" color="success">+ 새 계약 만들기</Button>
+
+      {/* 최근 제안서 */}
+      {recentProposals.length > 0 && (
+        <Box className="mt-8">
+          <Typography variant="h6" className="font-bold mb-2">최근 제안서</Typography>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            {recentProposals.map((proposal, index) => (
+              <Box key={proposal.id || index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold">{proposal.title}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {proposal.client_name} • ${proposal.total_amount} • {proposal.status}
+                </Typography>
+              </Box>
+            ))}
+          </Paper>
+        </Box>
+      )}
 
       {/* 이메일/알림 */}
       <Box className="mt-10">
         <Typography variant="h6" className="font-bold mb-2">이메일 발송 현황</Typography>
-        <Typography>오늘 발송한 메일 : 2건 / 실패 : 0건</Typography>
+        <Typography>
+          오늘 발송한 메일 : {emailStats.sent}건 / 실패 : {emailStats.failed}건
+        </Typography>
       </Box>
 
       <Box className="mt-6">
         <Typography variant="h6" className="font-bold mb-2">오늘의 알림</Typography>
         <Typography className="text-green-700">✅ 입금 완료 : 디자인 작업 ($150)</Typography>
         <Typography className="text-yellow-800">⚠️ 미확인 입금 발생 : Alice ($300)</Typography>
+        {recentProposals.length > 0 && (
+          <Typography className="text-blue-700">📧 최근 제안서 {recentProposals.length}건이 발송되었습니다</Typography>
+        )}
       </Box>
     </Box>
   );

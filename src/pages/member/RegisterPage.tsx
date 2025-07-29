@@ -1,34 +1,50 @@
-import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, TextField, Typography, Link, Stack, Checkbox, FormControlLabel } from '@mui/material';
+import { Box, Button, TextField, Typography, Link, Stack, Radio, RadioGroup, FormControlLabel, FormLabel } from '@mui/material';
+import { AvatarUpload } from '../../components/AvatarUpload';
+import { useUserStore } from '../../store/userStore';
+import AddressAutocomplete from '../../components/AddressAutocomplete';
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordCheck, setPasswordCheck] = useState('');
   const navigate = useNavigate();
+  const { register, isLoading } = useUserStore();
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    passwordCheck: '',
+    name: '',
+    phone: '',
+  });
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [userType, setUserType] = useState('freelancer'); // 기본값 freelancer
+  
+  const [address, setAddress] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleRegister = async () => {
-    if (password !== passwordCheck) {
+    if (formData.password !== formData.passwordCheck) {
       alert('비밀번호가 일치하지 않습니다.');
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+    await register({
+      email: formData.email,
+      password: formData.password,
+      name: formData.name,
+      phone: formData.phone,
+      avatar: avatarFile ?? undefined,
+      user_type: userType as 'freelancer' | 'client',
+      address: address || '',
+      postal_code: postalCode || '',
     });
-
-    if (error) {
-      alert('회원가입 실패: ' + error.message);
-      return;
-    }
-
-    if (data.user?.identities?.length === 0) {
-      alert('이미 가입된 이메일입니다.');
-      return;
-    }
 
     alert('회원가입 성공! 이메일을 확인해 주세요.');
     navigate('/login', { replace: true });
@@ -42,12 +58,47 @@ export default function RegisterPage() {
         </Typography>
 
         <Stack spacing={2}>
-          <TextField label="이메일" fullWidth value={email} onChange={(e) => setEmail(e.target.value)} />
-          <TextField label="비밀번호" type="password" fullWidth value={password} onChange={(e) => setPassword(e.target.value)}  />
-          <TextField label="비밀번호 확인" type="password" fullWidth value={passwordCheck} onChange={(e) => setPasswordCheck(e.target.value)} />
+          <Box>
+            <FormLabel component="legend">회원 유형</FormLabel>
+            <RadioGroup
+              row
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+            >
+              <FormControlLabel value="freelancer" control={<Radio />} label="프리랜서" />
+              <FormControlLabel value="client" control={<Radio />} label="클라이언트" />
+            </RadioGroup>
+          </Box>
+          
+          {/* 아바타 업로드 섹션 */}
+          <Box display="flex" justifyContent="center">
+            <AvatarUpload 
+              onAvatarChange={setAvatarFile}
+            />
+          </Box>
 
-          <Button variant="contained" fullWidth onClick={handleRegister}>
-            회원가입
+          <TextField name="name" label="이름" fullWidth value={formData.name} onChange={handleChange} />
+          <TextField name="phone" label="휴대폰 번호" fullWidth value={formData.phone} onChange={handleChange} />
+          <TextField name="email" label="이메일" fullWidth value={formData.email} onChange={handleChange} />
+          <TextField name="password" label="비밀번호" type="password" fullWidth value={formData.password} onChange={handleChange}  />
+          <TextField name="passwordCheck" label="비밀번호 확인" type="password" fullWidth value={formData.passwordCheck} onChange={handleChange} />
+
+          <AddressAutocomplete
+            onSelect={(addr:any) => {
+              setAddress(addr);
+            }}
+          />
+
+          <TextField
+            label="우편번호"
+            fullWidth
+            value={postalCode}
+            onChange={(e) => setPostalCode(e.target.value)}
+          />
+
+          
+          <Button variant="contained" fullWidth onClick={handleRegister} disabled={isLoading}>
+            {isLoading ? '가입 중...' : '회원가입'}
           </Button>
 
           <Button variant="outlined" fullWidth onClick={() => navigate('/login')}>

@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
-
+/**
+ * 선불, 후불 비율 검증
+ * @returns null
+ */
 const SplitRatioValidator = () => {
   const { setError, clearErrors } = useFormContext();
   const prepay = Number(useWatch({ name: 'prepayRatio' }) ?? 0);
