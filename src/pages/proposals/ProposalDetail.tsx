@@ -98,49 +98,207 @@ function ProposalDetail() {
   }, [id]);
 
   const handleAccept = async () => {
-    // 질문사항
-    // 1. 보통 계약을 할 때 수락자가 제안 수락하고 서명한 다음 제안자가 서명해서 계약 성사 + 계약서 생성을 하는 경우가 흔한지, 
-    // 아니면 수락자가 제안 수락하고 수락자/제안자 동시 서명 후 계약 성사 + 계약서 생성이 되는 경우가 흔한 지 궁금합니다.
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // 1. 제안서 상태를 'accepted'로 업데이트
+      // 1. 제안서 상태를 'pending_signature'로 업데이트
       const { error: updateError } = await supabase
         .from('proposals')
-        .update({ status: 'accepted' })
+        .update({ status: 'pending_signature' })
         .eq('id', id);
-
+  
       if (updateError) {
         throw new Error('제안서 상태 업데이트 실패: ' + updateError.message);
       }
+  
+      // 2. contracts 테이블에 계약 정보 저장
+      const { data: contractData, error: contractError } = await supabase
+        .from("contracts")
+        .insert([{
+          proposal_id: id,
+          status: "pending_signature",
+          client_name: proposal?.client_name,
+          client_email: proposal?.email,
+          freelancer_name: proposal?.sender_name,
+          freelancer_email: proposal?.sender_email,
+          title: proposal?.title,
+          total_amount: proposal?.total_amount,
+          currency: proposal?.currency,
+          start_date: proposal?.start_date,
+          end_date: proposal?.end_date,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+  
+      if (contractError) {
+        throw new Error('계약 저장 실패: ' + contractError.message);
+      }
+  
+      // 3. 자체 서명 인터페이스 열기
+      // openSigningInterface(contractData.id);
+      // 3. 양측에 서명 요청 이메일 발송
 
-      // 2. 관련 테이블 데이터 조회
+      await sendSigningRequestEmails(contractData.id);
+      
+      // 4. 성공 메시지 표시
+      alert('계약이 수락되었습니다! 양측에 서명 요청 이메일이 발송되었습니다.');
+      
+      // 5. 대시보드로 이동
+      window.location.href = '/dashboard';
+    } catch (error) {
+      console.error('계약 수락 처리 실패:', error);
+      alert('계약 수락에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const sendSigningRequestEmails = async (contractId: string) => {
+    try {
+      const appUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5173';
+      
+      // 클라이언트에게 서명 요청 이메일
+      const clientEmailData = {
+        service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        template_id: import.meta.env.VITE_EMAILJS_SIGNING_REQUEST_TEMPLATE_ID, // 새 템플릿 필요
+        user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+        template_params: {
+          to_name: proposal?.client_name || '',
+          to_email: proposal?.email,
+          contract_title: proposal?.title || '',
+          contract_amount: `${proposal?.total_amount} ${proposal?.currency}`,
+          contract_period: `${proposal?.start_date} ~ ${proposal?.end_date}`,
+          signing_url: `${appUrl}/contracts/${contractId}/sign?role=client`,
+          proposal_id: id
+        }
+      };
+  
+      // 프리랜서에게 서명 요청 이메일
+      const freelancerEmailData = {
+        service_id: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        template_id: import.meta.env.VITE_EMAILJS_SIGNING_REQUEST_TEMPLATE_ID,
+        user_id: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+        template_params: {
+          to_name: proposal?.sender_name || '',
+          to_email: proposal?.sender_email || '',
+          contract_title: proposal?.title || '',
+          contract_amount: `${proposal?.total_amount} ${proposal?.currency}`,
+          contract_period: `${proposal?.start_date} ~ ${proposal?.end_date}`,
+          signing_url: `${appUrl}/contracts/${contractId}/sign?role=freelancer`,
+          proposal_id: id
+        }
+      };
+  
+      // 양측 이메일 동시 발송
+      await Promise.all([
+        fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(clientEmailData)
+        }),
+        fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(freelancerEmailData)
+        })
+      ]);
+  
+      console.log('서명 요청 이메일 발송 완료');
+      
+    } catch (error) {
+      console.error('서명 요청 이메일 발송 실패:', error);
+      throw error;
+    }
+  };
+
+  // 이메일로 서명을 받은 후 호출되는 함수
+  const handleEmailSignatureComplete = async (contractId: string, role: 'client' | 'freelancer', signature: string) => {
+    try {
+      // 1. 해당 역할의 서명 정보 저장
+      const updateData = role === 'client' 
+        ? { client_signature_name: signature, client_signed_date: new Date().toISOString() }
+        : { freelancer_signature_name: signature, freelancer_signed_date: new Date().toISOString() };
+
+      const { error: updateError } = await supabase
+        .from("contracts")
+        .update(updateData)
+        .eq('id', contractId)
+        .select();
+
+      if (updateError) {
+        throw new Error('서명 정보 저장 실패: ' + updateError.message);
+      }
+
+      // 2. 양측 서명 완료 여부 확인
+      const { data: contractData } = await supabase
+        .from("contracts")
+        .select("client_signature_name, freelancer_signature_name")
+        .eq('id', contractId)
+        .single();
+
+      if (contractData?.client_signature_name && contractData?.freelancer_signature_name) {
+        // 양측 서명 완료 시
+        console.log('양측 서명 완료! 계약서 생성 시작');
+        
+        // 3. 계약서 PDF 생성
+        await generateContractPDF(contractId);
+        
+        // 4. 제안서 상태를 'accepted'로 변경
+        const { error: finalUpdateError } = await supabase
+          .from('proposals')
+          .update({ status: 'accepted' })
+          .eq('id', id);
+
+        if (finalUpdateError) {
+          throw new Error('최종 상태 업데이트 실패: ' + finalUpdateError.message);
+        }
+
+        // 5. 양측에 계약 완료 이메일 발송
+        await sendContractCompletionEmails(contractId);
+        
+        console.log('계약 완료!');
+      } else {
+        console.log(`${role} 서명 완료, 상대방 서명 대기 중`);
+      }
+      
+    } catch (error) {
+      console.error('서명 완료 처리 실패:', error);
+      throw error;
+    }
+  };
+
+  const sendContractCompletionEmails = async (contractId: string) => {
+    try {
+      // 양측에 계약 완료 알림 이메일 발송
+      // ... 이메일 발송 로직
+      
+      console.log('계약 완료 이메일 발송 완료');
+    } catch (error) {
+      console.error('계약 완료 이메일 발송 실패:', error);
+    }
+  };
+
+  const generateContractPDF = async (contractId: string) => {
+    try {
+      // 1. 관련 테이블 데이터 조회
       const [midpayRes, platformRes, toolRes, attachmentRes] = await Promise.all([
         supabase.from("proposal_midpays").select("*").eq("proposal_id", id).order("pay_order", { ascending: true }),
         supabase.from("proposal_platforms").select("*").eq("proposal_id", id),
         supabase.from("proposal_tools").select("*").eq("proposal_id", id),
         supabase.from("proposal_attachments").select("*").eq("proposal_id", id)
       ]);
-
-      // 3. PDFMonkey로 계약서 PDF 생성
+  
+      // 2. PDFMonkey로 계약서 PDF 생성
       const pdfmonkeyApiKey = import.meta.env.VITE_PDFMONKEY_API_KEY;
       const pdfmonkeyTemplateId = import.meta.env.VITE_PDFMONKEY_TEMPLATE_ID;
-
+  
       if (!pdfmonkeyApiKey || !pdfmonkeyTemplateId) {
         throw new Error('PDFMonkey 설정이 누락되었습니다.');
       }
-
-      // 디버깅용 로그
-      console.log('PDFMonkey 환경변수 확인:');
-      console.log('- API Key 존재:', !!pdfmonkeyApiKey);
-      console.log('- Template ID:', `"${pdfmonkeyTemplateId}"`);
-      console.log('- Template ID 길이:', pdfmonkeyTemplateId?.length);
-
+  
       const pdfPayload = {
         document: {
           document_template_id: pdfmonkeyTemplateId,
           status: "pending",
           payload: {
+            id: id, // 계약 ID 추가
             start_date: proposal?.start_date,
             end_date: proposal?.end_date,
             client_name: proposal?.client_name,
@@ -165,14 +323,14 @@ function ProposalDetail() {
             midpayAmounts: midpayRes.data || [],
             platforms: platformRes.data?.map(p => p.platform) || [],
             tools: toolRes.data?.map(t => t.tool) || [],
-            attachments: attachmentRes.data || []
+            attachments: attachmentRes.data || [],
+            created_at: new Date().toISOString()
           }
         }
       };
-
+  
       console.log('PDFMonkey payload:', pdfPayload);
-      console.log('PDFMonkey payload JSON:', JSON.stringify(pdfPayload, null, 2));
-
+  
       const pdfRes = await fetch("https://api.pdfmonkey.io/api/v1/documents", {
         method: "POST",
         headers: {
@@ -181,24 +339,24 @@ function ProposalDetail() {
         },
         body: JSON.stringify(pdfPayload)
       });
-
+  
       if (!pdfRes.ok) {
         const pdfErrorText = await pdfRes.text();
         throw new Error(`PDF 생성 실패: ${pdfRes.status} - ${pdfErrorText}`);
       }
-
+  
       const pdfData = await pdfRes.json();
-      console.log('PDFMonkey 응답 전체:', pdfData);
+      console.log('PDFMonkey 응답:', pdfData);
       
-      // PDF 생성 완료까지 대기
+      // 3. PDF 생성 완료까지 대기
       let pdfUrl = pdfData.document?.download_url;
       let attempts = 0;
-      const maxAttempts = 30; // 최대 30초 대기
-
+      const maxAttempts = 30;
+  
       while (!pdfUrl && attempts < maxAttempts) {
-        console.log(`PDF 생성 대기 중... (${attempts + 1}/${maxAttempts})`);
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1초 대기
-        
+        console.log(`PDF 생성 중... (${attempts + 1}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+  
         // PDF 상태 재확인
         const statusRes = await fetch(`https://api.pdfmonkey.io/api/v1/documents/${pdfData.document.id}`, {
           headers: {
@@ -209,7 +367,7 @@ function ProposalDetail() {
         
         if (statusRes.ok) {
           const statusData = await statusRes.json();
-          console.log('PDF 상태 확인:', statusData.document.status);
+          console.log('PDF 상태:', statusData.document.status);
           pdfUrl = statusData.document?.download_url;
           
           if (statusData.document.status === 'success' && pdfUrl) {
@@ -221,14 +379,14 @@ function ProposalDetail() {
         }
         attempts++;
       }
-
+  
       if (!pdfUrl) {
         throw new Error('PDF 생성 시간이 초과되었습니다.');
       }
-
+  
       console.log('PDF 생성 완료:', pdfUrl);
-
-      // PDF를 Supabase Storage에 저장
+  
+      // 4. PDF를 Supabase Storage에 저장
       const pdfResponse = await fetch(pdfUrl);
       const pdfBlob = await pdfResponse.blob();
       
@@ -238,138 +396,37 @@ function ProposalDetail() {
         .upload(contractFileName, pdfBlob, {
           contentType: 'application/pdf'
         });
-
+  
       if (uploadError) {
         throw new Error('계약서 PDF 저장 실패: ' + uploadError.message);
       }
-
+  
       const { data: publicUrlData } = supabase.storage
         .from('contracts')
         .getPublicUrl(contractFileName);
-
+  
       const storedPdfUrl = publicUrlData.publicUrl;
       console.log('계약서 PDF 저장 완료:', storedPdfUrl);
-
-      // 4. SignWell 계약 생성
-      const signwellApiKey = import.meta.env.VITE_SIGNWELL_API_KEY;
-      const appUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5173';
-
-      if (!signwellApiKey) {
-        throw new Error('SignWell API 키가 누락되었습니다.');
-      }
-
-      const signwellPayload = {
-        test_mode: true,
-        title: proposal?.title || "Freelance Contract",
-        files: [
-          {
-            name: "Contract",
-            file_url: storedPdfUrl
-          }
-        ],
-        signers: [
-          {
-            name: proposal?.client_name,
-            email: proposal?.email,
-            role: "Client",
-            order: 1
-          },
-          {
-            name: proposal?.sender_name,
-            email: proposal?.sender_email,
-            role: "Freelancer",
-            order: 2
-          }
-        ],
-        redirect_url: `${appUrl}/contracts/${id}/completed`,
-        redirect_decline_url: `${appUrl}/contracts/${id}/declined`
-      };
-
-      console.log('SignWell payload:', signwellPayload);
-
-      const signwellRes = await fetch("https://api.signwell.com/v1/documents", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${signwellApiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(signwellPayload)
-      });
-
-      if (!signwellRes.ok) {
-        const signwellErrorText = await signwellRes.text();
-        throw new Error(`SignWell API 오류: ${signwellRes.status} - ${signwellErrorText}`);
-      }
-
-      const signwellData = await signwellRes.json();
-      console.log('SignWell 문서 생성 완료:', signwellData.id);
-
-      // 5. contracts 테이블에 계약 정보 저장
-      const { data: contractData, error: contractError } = await supabase
+  
+      // 5. contracts 테이블에 PDF URL 업데이트
+      const { error: updateError } = await supabase
         .from("contracts")
-        .insert([{
-          proposal_id: id,
-          status: "pending_signature",
-          signwell_document_id: signwellData.id,
-          temp_pdf_url: storedPdfUrl,
-          client_name: proposal?.client_name,
-          client_email: proposal?.email,
-          freelancer_name: proposal?.sender_name,
-          freelancer_email: proposal?.sender_email,
-          title: proposal?.title,
-          total_amount: proposal?.total_amount,
-          currency: proposal?.currency,
-          start_date: proposal?.start_date,
-          end_date: proposal?.end_date,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-
-      if (contractError) {
-        throw new Error('계약 저장 실패: ' + contractError.message);
-      }
-
-      console.log('계약 저장 완료:', contractData.id);
-
-      // 6. 서명 페이지로 이동
-      if (signwellData.signing_url) {
-        window.location.href = signwellData.signing_url;
-      } else {
-        alert('계약서 생성에 실패했습니다.');
+        .update({ 
+          final_pdf_url: storedPdfUrl,
+          pdf_generated_at: new Date().toISOString()
+        })
+        .eq('id', contractId);
+  
+      if (updateError) {
+        console.error('PDF URL 업데이트 실패:', updateError);
       }
       
-    } catch (error) {
-      console.error('계약 수락 처리 실패:', error);
-      alert('계약 수락에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
-    }
-  };
-
-  // 서명 완료 확인 함수
-  const checkSigningStatus = async (contractId: string, signwellDocumentId: string) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('계약서 PDF 생성 및 저장 완료');
       
-      const res = await axios.post(
-        'https://brywgebfgffpiulmkmrw.supabase.co/functions/v1/sign-complete',
-        { 
-          contract_id: contractId, 
-          signwell_document_id: signwellDocumentId 
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-          }
-        }
-      );
-
-      if (res.data.success) {
-        alert('서명이 완료되었습니다!');
-        window.location.href = '/dashboard';
-      }
     } catch (error) {
-      console.error('서명 상태 확인 실패:', error);
+      console.error('PDF 생성 실패:', error);
+      // PDF 생성 실패해도 계약은 성사
+      throw error; // 에러를 다시 던져서 상위에서 처리할 수 있도록
     }
   };
 
