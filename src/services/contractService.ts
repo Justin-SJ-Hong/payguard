@@ -1,5 +1,31 @@
 import { supabase } from "../lib/supabase";
 
+// 문자열에서 제로폭/유니코드 제어문자 제거 후 NFC 정규화
+const sanitizeNFC = (s: string) =>
+    s
+      .replace(/[\u200B-\u200D\uFEFF]/g, '')       // zero-width chars
+      .replace(/[\u0000-\u001F\u007F]/g, '')      // control chars
+      .normalize('NFC');
+  
+// 객체/배열을 전부 돌며 문자열을 NFC로 변환
+const deepNormalizeNFC = (value: any, excludeKeys: string[] = []): any => {
+  if (typeof value === 'string') return sanitizeNFC(value);
+  if (Array.isArray(value)) return value.map(item => deepNormalizeNFC(item, excludeKeys));
+  if (value && typeof value === 'object') {
+    const out: any = {};
+    for (const [k, v] of Object.entries(value)) {
+      // 서명 관련 키는 NFC 정규화 제외
+      if (excludeKeys.includes(k)) {
+        out[k] = v;
+      } else {
+        out[k] = deepNormalizeNFC(v, excludeKeys);
+      }
+    }
+    return out;
+  }
+  return value;
+};
+
 export const generateContractPDF = async (contractId: string, proposalId: string) => {
   try {
     // 1. 관련 테이블 데이터 조회
@@ -81,25 +107,33 @@ export const generateContractPDF = async (contractId: string, proposalId: string
             tools: toolRes.data?.map(t => t.tool) || [],
             attachments: attachmentRes.data?.map(att => ({
                 ...att,
-                file_name: decodeURIComponent(encodeURIComponent(att.file_name || '')) // UTF-8 인코딩 처리
+                file_name: att.file_name ? sanitizeNFC(att.file_name) : ''
             })) || [],
             created_at: new Date().toISOString()
         }
       }
     };
 
-    console.log('PDFMonkey payload:', pdfPayload);
+    // NFC 정규화
+    const normalizedPayload = deepNormalizeNFC(pdfPayload, [
+        'client_signature_url', 
+        'freelancer_signature_url',
+        'client_signature_date',
+        'freelancer_signature_date'
+    ]); 
+
+    console.log('PDFMonkey payload:', normalizedPayload);
 
     // JSON 형식으로 보기 좋게 출력
-    console.log('PDFMonkey payload (JSON):', JSON.stringify(pdfPayload, null, 2));
+    console.log('PDFMonkey payload (JSON):', JSON.stringify(normalizedPayload, null, 2));
 
     const pdfRes = await fetch("https://api.pdfmonkey.io/api/v1/documents", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${pdfmonkeyApiKey}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json; charset=utf-8"
       },
-      body: JSON.stringify(pdfPayload)
+      body: JSON.stringify(normalizedPayload)
     });
 
     if (!pdfRes.ok) {
