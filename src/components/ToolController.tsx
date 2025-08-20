@@ -46,6 +46,7 @@ const ToolController = () => {
           renderInput={(params) => (
             <TextField
               {...params}
+              size="small"
               label="계약 대상 도구"
               placeholder="입력 후 Enter"
               error={!!errors.tools}

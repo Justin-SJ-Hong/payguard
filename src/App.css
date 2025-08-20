@@ -1,15 +1,15 @@
 #root {
-  max-width: 1280px;
+  /* max-width: 1280px; */
   height: calc(100vh - 300px);
-  padding: 2rem;
+  /* padding: 2rem; */
   /* margin: 0 auto; */
-  margin: 0 auto;
+  margin: 0;
   width: 100vw;
   text-align: center;
 }
 
 .main {
-  height: calc(100vh - 300px);
+  height: calc(100vh - 228px);
   /* width: 100%; */
 }
 

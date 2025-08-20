@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react'
 import { Box, Typography, Paper, Button, Grid } from '@mui/material';
 import { useUserStore } from '../../store/userStore';
 import { supabase } from '../../lib/supabase';
+import { useNavigate } from 'react-router-dom';
 
 
 export default function Dashboard() {
@@ -62,6 +63,10 @@ export default function Dashboard() {
     { title: '총 입금 완료액', value: '$8,200.55', color: 'text-amber-600' },
     { title: '미확인 입금건', value: '1', color: 'text-red-600' },
   ];
+  const navigate = useNavigate();
+  const handleProposalClick = (proposalId: string) => {
+    navigate(`/proposals/${proposalId}`);
+  };
 
   return (
     <Box className="p-8">
@@ -102,12 +107,41 @@ export default function Dashboard() {
       <Button variant="outlined" color="success">+ 새 계약 만들기</Button>
 
       {/* 최근 제안서 */}
-      {recentProposals.length > 0 && (
+      {/* {recentProposals.length > 0 && (
         <Box className="mt-8">
           <Typography variant="h6" className="font-bold mb-2">최근 제안서</Typography>
           <Paper variant="outlined" sx={{ p: 2 }}>
             {recentProposals.map((proposal, index) => (
               <Box key={proposal.id || index} sx={{ mb: 2, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                <Typography variant="subtitle1" fontWeight="bold">{proposal.title}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {proposal.client_name} • ${proposal.total_amount} • {proposal.status}
+                </Typography>
+              </Box>
+            ))}
+          </Paper>
+        </Box>
+      )} */}
+      {recentProposals.length > 0 && (
+        <Box className="mt-8">
+          <Typography variant="h6" className="font-bold mb-2">최근 제안서</Typography>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            {recentProposals.map((proposal, index) => (
+              <Box 
+                key={proposal.id || index} 
+                sx={{ 
+                  mb: 2, 
+                  p: 2, 
+                  border: '1px solid #e0e0e0', 
+                  borderRadius: 1,
+                  cursor: 'pointer', // 클릭 가능함을 표시
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5', // 호버 효과
+                    borderColor: '#1976d2'
+                  }
+                }}
+                onClick={() => handleProposalClick(proposal.id)} // 클릭 이벤트 추가
+              >
                 <Typography variant="subtitle1" fontWeight="bold">{proposal.title}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {proposal.client_name} • ${proposal.total_amount} • {proposal.status}

@@ -8,7 +8,9 @@ export interface EmailData {
   attachments?: File[];
 }
 
-export interface ProposalEmailData {
+export interface ProposalEmailData {  
+  senderName: string;
+  senderEmail: string;
   clientName: string;
   clientEmail: string;
   title: string;

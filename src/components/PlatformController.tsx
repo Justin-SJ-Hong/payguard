@@ -45,11 +45,12 @@ const PlatformController = () => {
           renderInput={(params) => (
             <TextField
               {...params}
+              size="small"
               label="계약 대상 플랫폼"
               placeholder="입력 후 Enter"
               error={!!errors.platforms}
               helperText={typeof errors.platforms?.message === 'string' ? errors.platforms.message : ''}
-              sx={{ mb: 2 }}
+              // sx={{ mb: 2 }}
             />
           )}
         />

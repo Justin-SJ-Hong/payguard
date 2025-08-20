@@ -19,6 +19,7 @@ import Dashboard from "./pages/dashboard/Dashboard.tsx";
 import LoginPage from "./pages/member/LoginPage.tsx";
 import RegisterPage from "./pages/member/RegisterPage.tsx";
 import ForgotPasswordPage from "./pages/member/ForgotPasswordPage.tsx";
+import Profile from "./pages/member/Profile.tsx";
 import ContractRegisterForm from "./pages/contracts/ContractRegisterForm.tsx";
 import ContractList from "./pages/contracts/ContractList.tsx";
 import ContractDetail from "./pages/contracts/ContractDetail.tsx";
@@ -28,6 +29,7 @@ import View from "./pages/contracts/View.tsx";
 import Pay from "./pages/contracts/Pay.tsx";
 import Proposal from "./pages/proposals/Proposal.tsx"
 import ProposalDetail from "./pages/proposals/ProposalDetail.tsx"
+import ContractSign from "./pages/contracts/ContractSign.tsx"
 // import OnboardTest from "./pages/OnboardTest.tsx";
 
 const router = createBrowserRouter([
@@ -49,9 +51,18 @@ const router = createBrowserRouter([
       { path: "login", element: <LoginPage /> },
       { path: "register", element: <RegisterPage /> },
       { path: "forgot-password", element: <ForgotPasswordPage /> },
+      { 
+        path: "profile", 
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ) 
+      },
       // { path: "dashboard", element: <Dashboard /> },
       { path: "contracts", element: <ContractList /> },
       { path: "contracts/:id", element: <ContractDetail /> },
+      { path: "contracts/:id/sign", element: <ContractSign /> },
       { path: "contracts/:id/view", element: <View /> },
       { path: "contracts/:id/pay", element: <Pay /> },
       { path: "contracts/new", element: <ContractRegisterForm /> },

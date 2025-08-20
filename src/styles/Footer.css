@@ -1,7 +1,13 @@
 footer {
     color: #19764D;
-    height: 100px;
-    font-family: 'Oswald'
+    height: 72px;
+    font-family: 'Oswald';
+    position: fixed;
+    bottom: 0; /* 맨 아래 */
+    left: 0;
+    right: 0;
+    border-top: 1px solid #e0e0e0; /* 상단 경계선 */
+    z-index: 1000; /* 다른 요소들 위에 표시 */
 }
 
 .tos, .policy {
