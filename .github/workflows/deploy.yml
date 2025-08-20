@@ -1,0 +1,56 @@
+name: Deploy PayGuard to S3 And Invalidate CloudFront
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_PAYPAL_CLIENT_ID: ${{ secrets.VITE_PAYPAL_CLIENT_ID }}
+      VITE_PAYPAL_SECRET: ${{ secrets.VITE_PAYPAL_SECRET }}
+      VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID }}
+      VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
+      VITE_EMAILJS_REJECT_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_REJECT_TEMPLATE_ID }}
+      VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
+      VITE_EMAILJS_SIGNING_REQUEST_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_SIGNING_REQUEST_TEMPLATE_ID }}
+      VITE_GOOGLE_MAP_KEY: ${{ secrets.VITE_GOOGLE_MAP_KEY }}
+      VITE_PDFMONKEY_API_KEY: ${{ secrets.VITE_PDFMONKEY_API_KEY }}
+      VITE_PDFMONKEY_TEMPLATE_ID: ${{ secrets.VITE_PDFMONKEY_TEMPLATE_ID }}
+      VITE_SIGNWELL_API_KEY: ${{ secrets.VITE_SIGNWELL_API_KEY }}
+      VITE_APP_URL: ${{ secrets.VITE_APP_URL }}
+    steps:
+      - name: Github Repository 파일 불러오기
+        uses: actions//checkout@v4
+
+      - name: 의존성 설치
+        run: npm install
+      
+      - name: 빌드하기
+        run: npm run build
+      
+      - name: Debugging
+        run: |
+          ls
+          echo "-----------------"
+          cd dist
+          ls
+      
+      - name: AWS 인증 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      
+      - name: S3 기존 파일 전체 삭제 후 새 파일 저장
+        run: |
+          aws s3 rm --recursive s3://payguard
+          aws s3 cp ./dist s3://payguard/ --recursive
+      
+      - name: CloudFront 캐시 무효화
+        run: aws cloudfront create-invalidation --distribution-id E3FJ0GK0BG5SS4 --paths "/*"
