@@ -26,14 +26,17 @@ function App() {
       const { data: { session } } = await supabase.auth.getSession();
 
       if (session?.user) {
-        // 프로필 정보 fetch 후 Zustand에 저장
+        // 프로필 정보 fetch 후 Zustand에 저장 (소프트 삭제 계정 차단)
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
-        if (profile) {
+        if (profile && !(profile as any).is_deleted) {
           useUserStore.setState({ user: profile });
+        } else {
+          await supabase.auth.signOut();
+          useUserStore.setState({ user: null });
         }
       } else {
         useUserStore.setState({ user: null });

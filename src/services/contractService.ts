@@ -1,4 +1,6 @@
 import { supabase } from "../lib/supabase";
+import formatNumber from "../utils/formatNumber";
+import formatDateToCustom from "../utils/formatDateToCustom";
 
 // 문자열에서 제로폭/유니코드 제어문자 제거 후 NFC 정규화
 const sanitizeNFC = (s: string) =>
@@ -82,34 +84,37 @@ export const generateContractPDF = async (contractId: string, proposalId: string
             client_name: proposal.client_name,
             client_email: proposal.email,
             client_signature_url: contract.client_signature_url,
-            client_signature_date: contract.client_signature_date,
+            client_signature_date: formatDateToCustom(contract.client_signature_date),
             freelancer_signature_url: contract.freelancer_signature_url,
-            freelancer_signature_date: contract.freelancer_signature_date,
+            freelancer_signature_date: formatDateToCustom(contract.freelancer_signature_date),
             sender_name: proposal.sender_name,
             sender_email: proposal.sender_email,
             title: proposal.title,
             description: proposal.description,
             scope: proposal.scope,
-            total_amount: proposal.total_amount,
+            total_amount: formatNumber(proposal.total_amount),
             currency: proposal.currency,
             prepay_ratio: proposal.prepay_ratio,
-            prepay_amount: Math.floor((proposal.total_amount || 0) * (proposal.prepay_ratio || 0) / 100),
+            prepay_amount: formatNumber(Math.floor((proposal.total_amount || 0) * (proposal.prepay_ratio || 0) / 100)),
             first_pay_date: proposal.first_pay_date,
             postpay_ratio: proposal.postpay_ratio,
-            postpay_amount: Math.floor((proposal.total_amount || 0) * (proposal.postpay_ratio || 0) / 100),
+            postpay_amount: formatNumber(Math.floor((proposal.total_amount || 0) * (proposal.postpay_ratio || 0) / 100)),
             last_pay_date: proposal.last_pay_date,
             use_midpay: proposal.use_midpay,
             midpay_count: proposal.midpay_count,
             terms: proposal.terms,
             message: proposal.message,
-            midpayAmounts: midpayRes.data || [],
+            midpayAmounts: midpayRes.data?.map(item => ({
+              ...item,
+              amount: formatNumber(item.amount)
+            })) || [],
             platforms: platformRes.data?.map(p => p.platform) || [],
             tools: toolRes.data?.map(t => t.tool) || [],
             attachments: attachmentRes.data?.map(att => ({
                 ...att,
                 file_name: att.file_name ? sanitizeNFC(att.file_name) : ''
             })) || [],
-            created_at: new Date().toISOString()
+            created_at: formatDateToCustom(new Date().toISOString())
         }
       }
     };

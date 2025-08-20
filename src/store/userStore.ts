@@ -50,16 +50,27 @@ export const useUserStore = create<UserState>((set, get) => ({
             if (error) throw error;
         
             if (data.user) {
-                // 프로필 정보 가져오기
+                // 프로필 정보 가져오기 (소프트 삭제 계정 차단)
                 const { data: profile } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', data.user.id)
                 .single();
-                
+
+                if (!profile) {
+                    set({ error: '프로필을 찾을 수 없습니다.', isLoading: false });
+                    return;
+                }
+
+                if ((profile as any).is_deleted) {
+                    await supabase.auth.signOut();
+                    set({ user: null, isLoading: false, error: '비활성화된 계정입니다. 관리자에게 문의하세요.' });
+                    return;
+                }
+
                 set({ 
-                user: profile, 
-                isLoading: false 
+                    user: profile as any, 
+                    isLoading: false 
                 });
             }
         } catch (error) {

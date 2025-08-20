@@ -19,6 +19,7 @@ import Dashboard from "./pages/dashboard/Dashboard.tsx";
 import LoginPage from "./pages/member/LoginPage.tsx";
 import RegisterPage from "./pages/member/RegisterPage.tsx";
 import ForgotPasswordPage from "./pages/member/ForgotPasswordPage.tsx";
+import Profile from "./pages/member/Profile.tsx";
 import ContractRegisterForm from "./pages/contracts/ContractRegisterForm.tsx";
 import ContractList from "./pages/contracts/ContractList.tsx";
 import ContractDetail from "./pages/contracts/ContractDetail.tsx";
@@ -50,6 +51,14 @@ const router = createBrowserRouter([
       { path: "login", element: <LoginPage /> },
       { path: "register", element: <RegisterPage /> },
       { path: "forgot-password", element: <ForgotPasswordPage /> },
+      { 
+        path: "profile", 
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ) 
+      },
       // { path: "dashboard", element: <Dashboard /> },
       { path: "contracts", element: <ContractList /> },
       { path: "contracts/:id", element: <ContractDetail /> },

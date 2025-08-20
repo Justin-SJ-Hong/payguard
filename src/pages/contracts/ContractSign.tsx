@@ -44,24 +44,64 @@ function ContractSign() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [signatureImage, setSignatureImage] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
     console.log('useEffect 실행됨');
     console.log('params:', params); // 전체 params 객체 확인
     console.log('id:', id);
 
-    const fetchContract = async () => {
+    const checkAuthAndPermission = async () => {
       try {
-        const { data, error } = await supabase
+        // 1. 현재 로그인한 사용자 정보 가져오기
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          setError('로그인이 필요합니다.');
+          setLoading(false);
+          return;
+        }
+
+        setCurrentUser(user);
+
+        // 2. 계약 정보 가져오기
+        const { data: contractData, error: contractError } = await supabase
           .from("contracts")
           .select("*")
           .eq("id", id)
           .single();
 
-          console.log('Supabase 응답:', { data, error }); // 디버깅 로그 추가
+        if (contractError) {
+          throw contractError;
+        }
 
-        if (error) throw error;
-        setContract(data);
+        if (!contractData) {
+          setError('계약 정보를 찾을 수 없습니다.');
+          setLoading(false);
+          return;
+        }
+
+        setContract(contractData);
+
+        // 3. 권한 확인
+        let hasAccess = false;
+        
+        if (role === 'client') {
+          // 클라이언트 역할로 접근하려면 클라이언트 이메일과 일치해야 함
+          hasAccess = user.email === contractData.client_email;
+        } else if (role === 'freelancer') {
+          // 프리랜서 역할로 접근하려면 프리랜서 이메일과 일치해야 함
+          hasAccess = user.email === contractData.freelancer_email;
+        }
+
+        if (!hasAccess) {
+          setError('이 계약에 서명할 권한이 없습니다.');
+          setLoading(false);
+          return;
+        }
+
+        setHasPermission(true);
       } catch (err) {
         console.error('계약 조회 오류:', err);
         setError(err instanceof Error ? err.message : '계약 정보를 불러올 수 없습니다.');
@@ -70,11 +110,8 @@ function ContractSign() {
       }
     };
 
-    // if (contractId) {
-    //   fetchContract();
-    // }
-    fetchContract();
-  }, [id]);
+    checkAuthAndPermission();
+  }, [id, role]);
 
   const handleSignatureSave = (signatureDataUrl: string) => {
     setSignatureImage(signatureDataUrl);
@@ -223,6 +260,31 @@ function ContractSign() {
     return (
       <Box p={3}>
         <Alert severity="error">{error}</Alert>
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Button 
+            variant="contained" 
+            onClick={() => navigate('/')}
+            sx={{ mr: 1 }}
+          >
+            메인으로 이동
+          </Button>
+          <Button 
+            variant="outlined" 
+            onClick={() => navigate('/member/login')}
+          >
+            로그인 페이지로
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <Box p={3}>
+        <Alert severity="warning">
+          이 계약에 서명할 권한이 없습니다. 올바른 계정으로 로그인해주세요.
+        </Alert>
       </Box>
     );
   }
