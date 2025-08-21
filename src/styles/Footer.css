@@ -13,4 +13,9 @@ footer {
 .tos, .policy {
     font-family: 'Noto_Sans_KR';
     font-weight: bold;
+    color: #19764D;
+}
+
+.tos:hover, .policy:hover {
+    text-decoration: underline;
 }

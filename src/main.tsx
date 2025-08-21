@@ -30,6 +30,8 @@ import Pay from "./pages/contracts/Pay.tsx";
 import Proposal from "./pages/proposals/Proposal.tsx"
 import ProposalDetail from "./pages/proposals/ProposalDetail.tsx"
 import ContractSign from "./pages/contracts/ContractSign.tsx"
+import TermOfUse from "./pages/etc/TermOfUse.tsx";
+import PrivacyPolicy from "./pages/etc/PrivacyPolicy.tsx";
 // import OnboardTest from "./pages/OnboardTest.tsx";
 
 const router = createBrowserRouter([
@@ -81,6 +83,8 @@ const router = createBrowserRouter([
           { path: ":id", element: <ProposalDetail /> },
         ],
       },
+      { path: "term-of-use", element: <TermOfUse /> },
+      { path: "privacy-policy", element: <PrivacyPolicy /> },
       // { path: "onboard", element: <OnboardTest /> },
     ],
   }
