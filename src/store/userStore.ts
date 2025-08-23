@@ -148,6 +148,7 @@ export const useUserStore = create<UserState>((set, get) => ({
                 error: error instanceof Error ? error.message : 'Registration failed',
                 isLoading: false,
             });
+            throw error; // 에러를 다시 throw하여 컴포넌트에서 처리할 수 있도록 함
         }
     },
 

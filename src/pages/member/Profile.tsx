@@ -1,9 +1,28 @@
 import { useState } from 'react';
-import { Box, Button, Divider, Stack, TextField, Typography, Alert } from '@mui/material';
+import { Box, Button, Divider, Stack, TextField, Typography, Alert, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { AvatarUpload } from '../../components/AvatarUpload';
 import { useUserStore } from '../../store/userStore';
 import { supabase } from '../../lib/supabase';
+import PasswordValidationDisplay from '../../components/PasswordValidationDisplay';
+
+// 비밀번호 강도 검증 함수
+const validatePassword = (password: string) => {
+  const minLength = password.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  return {
+    isValid: minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar,
+    minLength,
+    hasUpperCase,
+    hasLowerCase,
+    hasNumbers,
+    hasSpecialChar
+  };
+};
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -14,6 +33,8 @@ export default function Profile() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [passwordValidation, setPasswordValidation] = useState(validatePassword(''));
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleAvatarChange = async (file: File | null) => {
     setError(null);
@@ -54,6 +75,15 @@ export default function Profile() {
       setError(error);
       return;
     }
+    
+    // 비밀번호 강도 검증
+    if (!passwordValidation.isValid) {
+      const error = '비밀번호는 8자리 이상이며, 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다.';
+      alert(error);
+      setError(error);
+      return;
+    }
+    
     if (newPassword !== confirmPassword) {
       const error = '비밀번호가 일치하지 않습니다.';
       console.log(error);
@@ -69,6 +99,7 @@ export default function Profile() {
       setMessage('비밀번호가 변경되었습니다. 다시 로그인해야 할 수 있습니다.');
       setNewPassword('');
       setConfirmPassword('');
+      setPasswordValidation(validatePassword(''));
     } catch (e: any) {
       setError(e?.message || '비밀번호 변경 중 오류가 발생했습니다.');
     } finally {
@@ -80,9 +111,6 @@ export default function Profile() {
     setError(null);
     setMessage(null);
     if (!user) return;
-
-    const proceed = window.confirm('정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
-    if (!proceed) return;
 
     try {
       setIsSubmitting(true);
@@ -104,6 +132,14 @@ export default function Profile() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const openDeleteDialog = () => {
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
   };
 
   if (!user) {
@@ -148,12 +184,20 @@ export default function Profile() {
 
           <Box>
             <Typography variant="subtitle1" fontWeight="bold" mb={1}>비밀번호 변경</Typography>
+            <PasswordValidationDisplay 
+              passwordValidation={passwordValidation} 
+              password={newPassword}
+              passwordCheck={confirmPassword}
+            />
             <Stack spacing={1}>
               <TextField
                 label="새 비밀번호"
                 type="password"
                 value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+                onChange={(e) => {
+                  setNewPassword(e.target.value);
+                  setPasswordValidation(validatePassword(e.target.value));
+                }}
               />
               <TextField
                 label="비밀번호 확인"
@@ -174,12 +218,30 @@ export default function Profile() {
             <Typography variant="body2" color="text.secondary" mb={1}>
               계정은 비활성화 처리되며(복구 가능), 인증 계정 완전 삭제는 관리자 권한이 필요합니다.
             </Typography>
-            <Button variant="outlined" color="error" onClick={handleDeleteAccount} disabled={isSubmitting}>
+            <Button variant="outlined" color="error" onClick={openDeleteDialog} disabled={isSubmitting}>
               {isSubmitting ? '처리 중...' : '계정 비활성화'}
             </Button>
           </Box>
         </Stack>
       </Box>
+
+      <Dialog open={deleteDialogOpen} onClose={closeDeleteDialog}>
+        <DialogTitle>계정 비활성화</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            계정을 비활성화하면 복구가 가능합니다. 계정을 완전히 삭제하려면 관리자에게 문의해주세요.
+            비활성화 처리 시 모든 데이터는 보존되며, 다시 활성화할 수 있습니다.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteDialog} color="primary">
+            취소
+          </Button>
+          <Button onClick={handleDeleteAccount} color="error" variant="contained">
+            비활성화
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
