@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>프리랜서 계약서</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100..900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic',
+               'NanumGothic', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      line-height: 1.6; 
+      color: #2d3748; 
+      background: #ffffff; 
+      font-size: 14px; 
+      padding: 40px; 
+      max-width: 800px; 
+      margin: 0 auto; 
+    }
+    .header { text-align: center; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 3px solid #3182ce; position: relative; }
+    .header::after { content: ''; position: absolute; bottom: -3px; left: 50%; transform: translateX(-50%); width: 100px; height: 3px; background: linear-gradient(90deg, #3182ce, #63b3ed); }
+    .header h1 { font-size: 32px; font-weight: 700; color: #1a202c; margin-bottom: 10px; letter-spacing: -0.5px; }
+    .header .subtitle { font-size: 16px; color: #718096; font-weight: 400; }
+    .section { margin-bottom: 30px; background: #f7fafc; border-radius: 12px; padding: 25px; border-left: 4px solid #3182ce; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); transition: all 0.3s ease; }
+    .section:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transform: translateY(-2px); }
+    .section-title { display: flex; align-items: center; font-weight: 600; color: #2d3748; margin-bottom: 20px; font-size: 18px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; }
+    .section-title .icon { margin-right: 12px; font-size: 20px; width: 24px; text-align: center; }
+    .info-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+    .info-row { display: flex; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-weight: 600; color: #4a5568; min-width: 120px; margin-right: 20px; flex-shrink: 0; }
+    .info-value { color: #2d3748; flex: 1; word-break: break-word; }
+    .amount-highlight { background: linear-gradient(135deg, #c6f6d5, #9ae6b4); padding: 15px 20px; border-radius: 8px; border: 2px solid #68d391; margin: 10px 0; }
+    .amount-highlight .info-label { color: #22543d; font-weight: 700; }
+    .amount-highlight .info-value { color: #22543d; font-weight: 700; font-size: 18px; }
+    .midpay-item { background: #edf2f7; padding: 12px 16px; border-radius: 6px; margin: 8px 0; border-left: 3px solid #4299e1; }
+    .platforms-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .tag { background: #3182ce; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .signature-area { margin-top: 50px; page-break-inside: avoid; background: #f7fafc; border-radius: 12px; padding: 30px; border: 2px solid #e2e8f0; }
+    .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 25px; }
+    .signature-box { text-align: center; padding: 20px; background: white; border-radius: 8px; border: 2px solid #e2e8f0; }
+    .signature-box h4 { font-weight: 600; color: #2d3748; margin-bottom: 15px; font-size: 16px; }
+    .signature-line { 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #2d3748;
+      border-radius: 4px;
+      padding: 10px;
+      height: auto; /* 고정 높이 제거 */
+      margin: 20px 0;
+      background: #fff;
+    }
+    .signature-line img {
+      max-width: 75%;
+      height: auto;
+    }
+    
+    .signature-label {
+      font-size: 12px;
+      color: #718096;
+      margin-top: 5px;
+    }
+    .signature-details { margin-top: 20px; font-size: 13px; color: #4a5568; }
+    .signature-details p { margin: 5px 0; }
+    .footer { margin-top: 40px; text-align: center; padding: 20px; background: #f7fafc; border-radius: 8px; border-top: 2px solid #e2e8f0; }
+    .footer p { font-size: 12px; color: #718096; line-height: 1.5; }
+    .contract-number { background: #3182ce; color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 15px; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #edf2f7; color: #2d3748; }
+    .status-active { background: #c6f6d5; color: #22543d; }
+    /* 파일명처럼 중요 텍스트에도 한 번 더 보강 */
+    html, body, .section, .info-label, .info-value, .tag,
+    .signature-box, .footer, .section-title, .amount-highlight {
+      font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic',
+                   'NanumGothic', system-ui, -apple-system, Segoe UI, Roboto, sans-serif !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>프리랜서 계약서</h1>
+    <div class="subtitle">Freelancer Contract Agreement</div>
+    <div class="contract-number">계약번호: {{ contract_id }}</div>
+    <div class="status-badge">상태: 계약 완료</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="icon">📅</span>계약 기간</div>
+    <div class="info-grid">
+      <div class="info-row"><div class="info-label">시작일</div><div class="info-value">{{ start_date }}</div></div>
+      <div class="info-row"><div class="info-label">종료일</div><div class="info-value">{{ end_date }}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="icon">👥</span>계약 당사자</div>
+    <div class="info-grid">
+      <div class="info-row"><div class="info-label">의뢰인</div><div class="info-value">{{ client_name }} ({{ client_email }})</div></div>
+      <div class="info-row"><div class="info-label">프리랜서</div><div class="info-value">{{ sender_name }} ({{ sender_email }})</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="icon">📋</span>프로젝트 개요</div>
+    <div class="info-grid">
+      <div class="info-row"><div class="info-label">프로젝트명</div><div class="info-value">{{ title }}</div></div>
+      <div class="info-row"><div class="info-label">프로젝트 설명</div><div class="info-value">{{ description }}</div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title"><span class="icon">🎯</span>작업 범위</div>
+    <div class="info-value">{{ scope }}</div>
+  </div>
+
+  {% if platforms and platforms.size > 0 %}
+  <div class="section">
+    <div class="section-title"><span class="icon">🛠️</span>사용 플랫폼</div>
+    <div class="platforms-tools">
+      {% for p in platforms %}<span class="tag">{{ p }}</span>{% else %}<span class="info-value">등록된 플랫폼 없음</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if tools and tools.size > 0 %}
+  <div class="section">
+    <div class="section-title"><span class="icon">🔧</span>사용 도구</div>
+    <div class="platforms-tools">
+      {% for t in tools %}<span class="tag">{{ t }}</span>{% else %}<span class="info-value">등록된 도구 없음</span>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="section">
+    <div class="section-title"><span class="icon">💰</span>계약 금액</div>
+    <div class="info-grid">
+      <div class="amount-highlight">
+        <div class="info-label">총 계약 금액</div>
+        <div class="info-value">{{ total_amount }} {{ currency }}</div>
+      </div>
+      <div class="info-row"><div class="info-label">선불</div><div class="info-value">{{ prepay_ratio }}% ({{ prepay_amount }} {{ currency }}) - 지급 예정일: {{ first_pay_date }}</div></div>
+      <div class="info-row"><div class="info-label">후불</div><div class="info-value">{{ postpay_ratio }}% ({{ postpay_amount }} {{ currency }}) - 지급 예정일: {{ last_pay_date }}</div></div>
+
+      {% if use_midpay %}
+        <div class="info-row">
+          <div class="info-label">중간 지급</div>
+          <div class="info-value">
+            {% if midpayAmounts and midpayAmounts.size > 0 %}
+              {% for m in midpayAmounts %}
+                <div class="midpay-item">{% if m.pay_order %}[{{ m.pay_order }}차] {% endif %}{{ m.amount }} {{ currency }} - 지급 예정일: {{ m.pay_date }}</div>
+              {% else %}
+                등록된 항목 없음
+              {% endfor %}
+            {% else %}
+              등록된 항목 없음
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="info-row"><div class="info-label">중간 지급</div><div class="info-value">없음</div></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if attachments %}
+  <div class="section">
+    <div class="section-title"><span class="icon">📎</span>첨부파일</div>
+    <div class="info-grid">
+      {% if attachments.size > 0 %}
+        {% for a in attachments %}
+          <div class="info-row">
+            <div class="info-label">파일</div>
+            <div class="info-value">
+              {% if a.file_name %}
+                <strong>{{ a.file_name }}</strong>{% if a.file_type %} ({{ a.file_type }}){% endif %}<br>
+              {% endif %}
+              {% if a.file_url %}
+                <a href="{{ a.file_url }}" target="_blank" rel="noreferrer">파일 링크 열기</a><br>
+                <img src="{{ a.file_url }}" alt="{{ a.file_name }}" style="max-width:100%; height:auto; border:1px solid #e2e8f0; border-radius:6px; padding:4px; margin-top:5px;">
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="info-row"><div class="info-label">파일</div><div class="info-value">첨부 없음</div></div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if terms %}
+  <div class="section">
+    <div class="section-title"><span class="icon">📝</span>특약사항</div>
+    <div class="info-value">{{ terms }}</div>
+  </div>
+  {% endif %}
+
+  {% if message %}
+  <div class="section">
+    <div class="section-title"><span class="icon">💬</span>제안 메시지</div>
+    <div class="info-value">{{ message }}</div>
+  </div>
+  {% endif %}
+
+  <div class="signature-area">
+    <div class="section-title"><span class="icon">✍️</span>서명</div>
+    <div class="signature-grid">
+      <div class="signature-box">
+        <h4>의뢰인 서명</h4>
+        
+        <div class="signature-line">
+          <img src={{client_signature_url}} alt="client_signature" />
+          <span class="signature-label">서명</span>
+        </div>
+        
+        <div class="signature-details">
+          <p>
+            <strong>이름:</strong> {{ client_name }}
+          </p>
+          <p>
+            <strong>날짜:</strong> {{ client_signature_date }}
+          </p>
+        </div>
+      </div>
+      <div class="signature-box">
+        <h4>프리랜서 서명</h4>
+        
+        <div class="signature-line">
+          <img src={{freelancer_signature_url}} alt="client_signature" />
+          <span class="signature-label">서명</span>
+        </div>
+        
+        <div class="signature-details">
+          <p>
+            <strong>이름:</strong> {{ sender_name }}
+          </p>
+          <p>
+            <strong>날짜:</strong> {{ freelancer_signature_date }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><strong>본 계약서는 {{ start_date }}에 작성되었으며, 양측의 서명으로 효력이 발생합니다.</strong></p>
+    <p style="margin-top: 10px;">계약서 생성일시: {{ created_at }}</p>
+  </div>
+</body>
+</html>

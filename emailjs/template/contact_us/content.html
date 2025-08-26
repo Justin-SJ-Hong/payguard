@@ -1,0 +1,52 @@
+<div style="font-family: system-ui, sans-serif, Arial; font-size: 12px">
+    <div>A message by {{name}} has been received. Kindly respond at your earliest convenience.</div>
+    <div
+      style="
+        margin-top: 20px;
+        padding: 15px 0;
+        border-width: 1px 0;
+        border-style: dashed;
+        border-color: lightgrey;
+      "
+    >
+      <table role="presentation">
+        <tr>
+          <td style="vertical-align: top">
+            <div
+              style="
+                padding: 6px 10px;
+                margin: 0 10px;
+                background-color: aliceblue;
+                border-radius: 5px;
+                font-size: 26px;
+              "
+              role="img"
+            >
+              👤
+            </div>
+          </td>
+          <td style="vertical-align: top">
+            <div style="color: #2c3e50; font-size: 16px">
+              <strong>보낸 사람: {{senderName}} ({{senderEmail}})</strong>
+            </div>
+            <div style="color: #cccccc; font-size: 13px">{{time}}</div>
+            <p>📄 새로운 계약 제안서가 도착했습니다.</p>
+  
+            <p><strong>{{title}}</strong></p>
+            <p>총 금액: {{totalAmount}} {{currency}}</p>
+            <p>작업 기간: {{startDate}} ~ {{endDate}}</p>
+            
+            <p>
+              👉 아래 버튼을 눌러 제안서를 미리 확인하고 응답해 주세요:
+            </p>
+            
+            <a href="{{previewUrl}}" style="padding: 10px 20px; background: #1976d2; color: white; text-decoration: none; border-radius: 4px;">
+              제안서 미리보기
+            </a>
+  
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  

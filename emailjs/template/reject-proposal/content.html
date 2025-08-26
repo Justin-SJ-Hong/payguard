@@ -1,0 +1,59 @@
+<div style="font-family: system-ui, sans-serif, Arial; font-size: 12px">
+    <div>A message by {{name}} has been received. Kindly respond at your earliest convenience.</div>
+    <div
+      style="
+        margin-top: 20px;
+        padding: 15px 0;
+        border-width: 1px 0;
+        border-style: dashed;
+        border-color: lightgrey;
+      "
+    >
+      <table role="presentation">
+        <tr>
+          <td style="vertical-align: top">
+            <div
+              style="
+                padding: 6px 10px;
+                margin: 0 10px;
+                background-color: aliceblue;
+                border-radius: 5px;
+                font-size: 26px;
+              "
+              role="img"
+            >
+              👤
+            </div>
+          </td>
+          <td style="vertical-align: top">
+            <div style="color: #2c3e50; font-size: 16px">
+              <strong>{{client_name}} 님이 {{to_name}} 님의 제안을 거절하셨습니다.</strong>
+            </div>
+            <div style="color: #cccccc; font-size: 13px">{{time}}</div>
+            <div style="color: #cccccc; font-size: 13px">
+              거절자 : {{client_name}}
+            </div>
+            <div style="color: #cccccc; font-size: 13px">
+              제안자 : {{to_name}}, {{to_email}}
+            </div>
+            <div>
+              <p style="font-size: 16px">
+                안녕하세요 {{to_name}}님, 제안서 검토 결과를 안내드립니다.
+              </p>
+              <p style="font-size: 16px">
+                ❌ 제안서가 거절되었습니다.
+              </p>
+              <p style="font-size: 16px">
+                거절 사유 : {{rejection_reason}}
+              </p>
+              <p style="font-size: 16px">
+                기타 거절 사유 : {{custom_reason}}
+              </p>
+            </div>
+            
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  

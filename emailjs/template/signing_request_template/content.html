@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>계약서 서명 요청</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #007bff; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background: #f8f9fa; padding: 30px; border-radius: 0 0 8px 8px; }
+    .contract-info { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #007bff; }
+    .signing-button { display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+    .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>계약서 서명 요청</h1>
+    </div>
+    
+    <div class="content">
+      <p>안녕하세요, <strong>{{to_name}}</strong>님!</p>
+      
+      <p>프리랜서 계약에 대한 서명 요청이 도착했습니다.</p>
+      
+      <div class="contract-info">
+        <h3>계약 정보</h3>
+        <p><strong>프로젝트:</strong> {{contract_title}}</p>
+        <p><strong>계약 금액:</strong> {{contract_amount}}</p>
+        <p><strong>계약 기간:</strong> {{contract_period}}</p>
+        <p><strong>계약 번호:</strong> {{proposal_id}}</p>
+      </div>
+      
+      <p>계약 내용을 검토하신 후 아래 버튼을 클릭하여 서명을 진행해주세요.</p>
+      
+      <div style="text-align: center;">
+        <a href="{{signing_url}}" class="signing-button">
+          ✍️ 계약서 서명하기
+        </a>
+      </div>
+      
+      <p><strong>⚠️ 중요:</strong></p>
+      <ul>
+        <li>서명을 완료하면 계약이 성립됩니다</li>
+        <li>계약 내용을 신중하게 검토해주세요</li>
+        <li>문의사항이 있으시면 연락해주세요</li>
+      </ul>
+      
+      <p>감사합니다.</p>
+    </div>
+    
+    <div class="footer">
+      <p>본 이메일은 자동으로 발송되었습니다.</p>
+      <p>© 2024 Freelance Payguard. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
