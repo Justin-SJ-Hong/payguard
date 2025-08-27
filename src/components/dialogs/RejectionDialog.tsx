@@ -16,7 +16,7 @@ import {
   Box,
 } from '@mui/material';
 
-import { RejectionData } from '../type/rejection';
+import { RejectionData } from '../../type/rejection';
 
 interface RejectionDialogProps {
   open: boolean;

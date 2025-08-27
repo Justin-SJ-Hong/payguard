@@ -1,9 +1,9 @@
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import { RootState } from '../store';
+import { useUserStore } from '../../store/userStore';
 
 export default function RedirectToDashboard() {
-  const isLoggedIn = useSelector((state: RootState) => state.user.isLoggedIn);
+  const isLoggedIn = useUserStore((state) => state.user);
 
   return isLoggedIn ? <Navigate to="/dashboard" replace /> : null;
 }

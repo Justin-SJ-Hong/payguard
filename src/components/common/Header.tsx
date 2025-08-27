@@ -2,9 +2,9 @@ import React, {useState, useRef} from 'react';
 import { AppBar, Toolbar, Avatar, IconButton, Menu, MenuItem, Typography, Box, Button } from '@mui/material';
 import '../styles/Header.css';
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUserStore } from '../store/userStore';
+import { useUserStore } from '../../store/userStore';
 
 function Header() {
     const navigate = useNavigate();

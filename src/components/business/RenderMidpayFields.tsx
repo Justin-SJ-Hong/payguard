@@ -3,7 +3,7 @@ import { Controller, Control, FieldErrors } from 'react-hook-form';
 import { Paper, Typography, Box, TextField } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
-import { useProposalStore } from '../store/proposalStore';
+import { useProposalStore } from '../../store/proposalStore';
 
 interface MidpayAmount {
   amount: number;

@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useUserStore } from '../store/userStore';
-import { supabase } from '../lib/supabase';
+import { useUserStore } from '../../store/userStore';
+import { supabase } from '../../lib/supabase';
 
 interface Props {
   children: React.ReactNode;
