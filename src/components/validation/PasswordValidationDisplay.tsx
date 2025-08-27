@@ -1,23 +1,13 @@
 import { Box, Typography, Stack, Alert } from '@mui/material';
-
-interface PasswordValidation {
-  isValid: boolean;
-  minLength: boolean;
-  hasUpperCase: boolean;
-  hasLowerCase: boolean;
-  hasNumbers: boolean;
-  hasSpecialChar: boolean;
-}
+import { usePasswordValidation } from '../../hooks/usePasswordValidation';
 
 interface PasswordValidationDisplayProps {
-  passwordValidation: PasswordValidation;
   password: string;
   passwordCheck: string;
 }
 
-const PasswordValidationDisplay = ({ passwordValidation, password, passwordCheck }: PasswordValidationDisplayProps) => {
-  const passwordsMatch = password === passwordCheck && password.length > 0;
-  const showPasswordMatch = password.length > 0 || passwordCheck.length > 0;
+const PasswordValidationDisplay = ({ password, passwordCheck }: PasswordValidationDisplayProps) => {
+  const { validation, passwordsMatch, showPasswordMatch, isAllValid } = usePasswordValidation(password, passwordCheck);
 
   return (
     <Box mt={1}>
@@ -27,33 +17,33 @@ const PasswordValidationDisplay = ({ passwordValidation, password, passwordCheck
       <Stack spacing={0.5} mt={1}>
         <Typography 
           variant="caption" 
-          color={passwordValidation.minLength ? 'success.main' : 'error.main'}
+          color={validation.minLength ? 'success.main' : 'error.main'}
         >
-          ✓ 8자리 이상 {passwordValidation.minLength ? '(완료)' : ''}
+          ✓ 8자리 이상 {validation.minLength ? '(완료)' : ''}
         </Typography>
         <Typography 
           variant="caption" 
-          color={passwordValidation.hasUpperCase ? 'success.main' : 'error.main'}
+          color={validation.hasUpperCase ? 'success.main' : 'error.main'}
         >
-          ✓ 대문자 포함 {passwordValidation.hasUpperCase ? '(완료)' : ''}
+          ✓ 대문자 포함 {validation.hasUpperCase ? '(완료)' : ''}
         </Typography>
         <Typography 
           variant="caption" 
-          color={passwordValidation.hasLowerCase ? 'success.main' : 'error.main'}
+          color={validation.hasLowerCase ? 'success.main' : 'error.main'}
         >
-          ✓ 소문자 포함 {passwordValidation.hasLowerCase ? '(완료)' : ''}
+          ✓ 소문자 포함 {validation.hasLowerCase ? '(완료)' : ''}
         </Typography>
         <Typography 
           variant="caption" 
-          color={passwordValidation.hasNumbers ? 'success.main' : 'error.main'}
+          color={validation.hasNumbers ? 'success.main' : 'error.main'}
         >
-          ✓ 숫자 포함 {passwordValidation.hasNumbers ? '(완료)' : ''}
+          ✓ 숫자 포함 {validation.hasNumbers ? '(완료)' : ''}
         </Typography>
         <Typography 
           variant="caption" 
-          color={passwordValidation.hasSpecialChar ? 'success.main' : 'error.main'}
+          color={validation.hasSpecialChar ? 'success.main' : 'error.main'}
         >
-          ✓ 특수문자 포함 {passwordValidation.hasSpecialChar ? '(완료)' : ''}
+          ✓ 특수문자 포함 {validation.hasSpecialChar ? '(완료)' : ''}
         </Typography>
       </Stack>
       
@@ -69,7 +59,7 @@ const PasswordValidationDisplay = ({ passwordValidation, password, passwordCheck
         </Box>
       )}
       
-      {passwordValidation.isValid && passwordsMatch && (
+      {isAllValid && (
         <Alert severity="success" sx={{ mt: 1 }}>
           비밀번호가 모든 조건을 만족하고 일치합니다!
         </Alert>

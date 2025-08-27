@@ -1,14 +1,13 @@
-// src/components/DateConsistencyValidator.tsx
-import { useProposalStore } from '../store/proposalStore';
 import { useEffect } from 'react';
+import { useProposalStore } from '../store/proposalStore';
 import dayjs from 'dayjs';
 
-interface Props {
+interface UseDateValidationProps {
   setError: (name: string, error: any) => void;
   clearErrors: (name: string) => void;
 }
 
-const DateConsistencyValidator = ({ setError, clearErrors }: Props) => {
+export const useDateValidation = ({ setError, clearErrors }: UseDateValidationProps) => {
   const workPeriodStart = useProposalStore((state) => state.workPeriodStart);
   const workPeriodEnd = useProposalStore((state) => state.workPeriodEnd);
   const firstPayDate = useProposalStore((state) => state.firstPayDate);
@@ -28,6 +27,7 @@ const DateConsistencyValidator = ({ setError, clearErrors }: Props) => {
     } else {
       clearErrors('workPeriod.start');
     }
+
     // 선불일 검증
     if (firstPayDate && workPeriodStart && firstPayDate < workPeriodStart) {
       setError('firstPayDate', {
@@ -67,6 +67,7 @@ const DateConsistencyValidator = ({ setError, clearErrors }: Props) => {
     // 중간 지급일 검증
     for (let i = 0; i < midpayAmounts.length; i++) {
       const midpayDate = midpayAmounts[i]?.date || '';
+      
       // 선불/후불 사이 검증
       if (
         midpayDate &&
@@ -109,12 +110,31 @@ const DateConsistencyValidator = ({ setError, clearErrors }: Props) => {
         continue;
       }
 
-      // 통과 시 에러 해제
+      // 작업 기간 내 검증
+      if (
+        midpayDate &&
+        workPeriodStart &&
+        workPeriodEnd &&
+        (midpayDate < workPeriodStart || midpayDate > workPeriodEnd)
+      ) {
+        setError(`midpayAmounts.${i}.date`, {
+          type: 'validate',
+          message: '중간 지급일자는 작업 기간 내에 있어야 합니다.',
+        });
+        continue;
+      }
+
+      // 모든 검증 통과 시 에러 제거
       clearErrors(`midpayAmounts.${i}.date`);
     }
-  }, [firstPayDate, lastPayDate, workPeriodStart, workPeriodEnd, midpayAmounts, setError, clearErrors]);
-
-  return null;
+  }, [
+    workPeriodStart,
+    workPeriodEnd,
+    firstPayDate,
+    lastPayDate,
+    midpayAmounts,
+    setError,
+    clearErrors,
+    today,
+  ]);
 };
-
-export default DateConsistencyValidator;

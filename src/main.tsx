@@ -10,9 +10,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 
-// import RedirectToDashboard from "./components/RedirectToDashboard.tsx";
-import HomeEntry from './components/HomeEntry';
-import ProtectedRoute from './components/ProtectedRoute';
+// import RedirectToDashboard from "./components/pages/RedirectToDashboard.tsx";
+import HomeEntry from './components/pages/HomeEntry';
+import ProtectedRoute from './components/common/ProtectedRoute';
 
 import App from './App.tsx'
 import Dashboard from "./pages/dashboard/Dashboard.tsx";

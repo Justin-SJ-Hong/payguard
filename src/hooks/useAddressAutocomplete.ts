@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
-import { TextField, List, ListItem, Paper, ListItemButton } from '@mui/material';
-import { supabase } from '../lib/supabase';
 
-interface Props {
+interface UseAddressAutocompleteProps {
+  query: string;
   onSelect: (address: string) => void;
 }
 
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export default function AddressAutocomplete({ onSelect }: Props) {
-  const [query, setQuery] = useState('');
+export const useAddressAutocomplete = ({ query, onSelect }: UseAddressAutocompleteProps) => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   useEffect(() => {
     if (!query) {
@@ -57,37 +55,16 @@ export default function AddressAutocomplete({ onSelect }: Props) {
     const timer = setTimeout(fetchSuggestions, 500); // 디바운스
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, SUPABASE_ANON_KEY]);
 
-  return (
-    <>
-      <TextField
-        label="주소"
-        fullWidth
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="예: 서울 강남구"
-        helperText={loading ? '검색 중...' : ''}
-      />
-      {suggestions.length > 0 && (
-        <Paper elevation={2}>
-          <List>
-            {suggestions.map((address, idx) => (
-                <ListItem key={idx} disablePadding>
-                    <ListItemButton
-                      onClick={() => {
-                        setQuery(address);
-                        setSuggestions([]);
-                        onSelect(address);
-                      }}
-                    >
-                        {address}
-                    </ListItemButton>
-                </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
-    </>
-  );
-}
+  const handleSelect = (address: string) => {
+    onSelect(address);
+    setSuggestions([]);
+  };
+
+  return {
+    suggestions,
+    loading,
+    handleSelect,
+  };
+};

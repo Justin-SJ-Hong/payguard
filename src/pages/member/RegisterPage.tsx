@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, TextField, Typography, Link, Stack, Radio, RadioGroup, FormControlLabel, FormLabel, Alert } from '@mui/material';
-import { AvatarUpload } from '../../components/AvatarUpload';
+import { AvatarUpload } from '../../components/forms/AvatarUpload';
 import { useUserStore } from '../../store/userStore';
-import AddressAutocomplete from '../../components/AddressAutocomplete';
-import PasswordValidationDisplay from '../../components/PasswordValidationDisplay';
+import AddressAutocomplete from '../../components/forms/AddressAutocomplete';
+import PasswordValidationDisplay from '../../components/validation/PasswordValidationDisplay';
 
 // 비밀번호 강도 검증 함수
 const validatePassword = (password: string) => {
@@ -127,7 +127,6 @@ export default function RegisterPage() {
           <TextField name="email" label="이메일" fullWidth value={formData.email} onChange={handleChange} />
           <TextField name="password" label="비밀번호" type="password" fullWidth value={formData.password} onChange={handleChange}  />
           <PasswordValidationDisplay 
-            passwordValidation={passwordValidation} 
             password={formData.password}
             passwordCheck={formData.passwordCheck}
           />

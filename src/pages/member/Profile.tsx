@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Box, Button, Divider, Stack, TextField, Typography, Alert, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { AvatarUpload } from '../../components/AvatarUpload';
+import { AvatarUpload } from '../../components/forms/AvatarUpload';
 import { useUserStore } from '../../store/userStore';
 import { supabase } from '../../lib/supabase';
-import PasswordValidationDisplay from '../../components/PasswordValidationDisplay';
+import PasswordValidationDisplay from '../../components/validation/PasswordValidationDisplay';
 
 // 비밀번호 강도 검증 함수
 const validatePassword = (password: string) => {
@@ -185,7 +185,6 @@ export default function Profile() {
           <Box>
             <Typography variant="subtitle1" fontWeight="bold" mb={1}>비밀번호 변경</Typography>
             <PasswordValidationDisplay 
-              passwordValidation={passwordValidation} 
               password={newPassword}
               passwordCheck={confirmPassword}
             />

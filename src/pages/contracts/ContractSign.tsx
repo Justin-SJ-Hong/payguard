@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { supabase } from "../../lib/supabase";
 import { generateContractPDF } from "../../services/contractService";
-import SignatureCanvas from "../../components/SignatureCanvas";
+import SignatureCanvas from "../../components/forms/SignatureCanvas";
 
 interface ContractData {
   id: string;

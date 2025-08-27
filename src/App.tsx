@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { supabase } from './lib/supabase';
 import { Outlet } from 'react-router'
 import './App.css'
-import Header from '../src/components/Header';
-import Footer from './components/Footer';
+import Header from './components/common/Header';
+import Footer from './components/common/Footer';
 import { createTheme } from '@mui/material/styles';
 import { useUserStore } from './store/userStore';
 import { PayPalScriptProvider } from "@paypal/react-paypal-js";

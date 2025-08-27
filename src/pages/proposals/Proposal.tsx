@@ -21,19 +21,19 @@ import {
 } from "@mui/material";
 
 // 선불, 후불, 중간지급 합계 검증 컴포넌트
-import TotalSplitValidator from "../../components/TotalSplitValidator";
-import PlatformController from "../../components/PlatformController";
-import ToolController from "../../components/ToolController";
+import TotalSplitValidator from "../../components/validation/TotalSplitValidator";
+import PlatformController from "../../components/business/PlatformController";
+import ToolController from "../../components/business/ToolController";
 
 
 // 날짜 검증 컴포넌트
-import DateConsistencyValidator from "../../components/DateConsistencyValidator";
+import DateConsistencyValidator from "../../components/validation/DateConsistencyValidator";
 
 // 파일 첨부 컴포넌트
-import { FileUpload } from "../../components/FileUpload";
+import { FileUpload } from "../../components/forms/FileUpload";
 
 // 중간 지급 필드 컴포넌트
-import RenderMidpayFields from '../../components/RenderMidpayFields';
+import RenderMidpayFields from '../../components/business/RenderMidpayFields';
 import formatNumber from '../../utils/formatNumber';
 import SplitRatioValidator from '../../utils/splitRatioValidator';
 

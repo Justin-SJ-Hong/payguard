@@ -27,7 +27,7 @@ import formatNumber from "../../utils/formatNumber";
 
 import axios from "axios";
 
-import RejectionDialog from "../../components/RejectionDialog";
+import RejectionDialog from "../../components/dialogs/RejectionDialog";
 import { RejectionData } from "../../type/rejection";
 
 function ProposalDetail() {
