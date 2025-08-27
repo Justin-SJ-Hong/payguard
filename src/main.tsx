@@ -62,14 +62,70 @@ const router = createBrowserRouter([
         ) 
       },
       // { path: "dashboard", element: <Dashboard /> },
-      { path: "contracts", element: <ContractList /> },
-      { path: "contracts/:id", element: <ContractDetail /> },
-      { path: "contracts/:id/sign", element: <ContractSign /> },
-      { path: "contracts/:id/view", element: <View /> },
-      { path: "contracts/:id/pay", element: <Pay /> },
-      { path: "contracts/new", element: <ContractRegisterForm /> },
-      { path: "clients", element: <Clients /> },
-      { path: "payments", element: <Payments /> },
+      { 
+        path: "contracts", 
+        element: (
+          <ProtectedRoute>
+            <ContractList />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: "contracts/:id", 
+        element: (
+          <ProtectedRoute>
+            <ContractDetail />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: "contracts/:id/sign", 
+        element: (
+          <ProtectedRoute>
+            <ContractSign />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: "contracts/:id/view", 
+        element: (
+          <ProtectedRoute>
+            <View />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: "contracts/:id/pay", 
+        element: (
+          <ProtectedRoute>
+            <Pay />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: "contracts/new", 
+        element: (
+          <ProtectedRoute>
+            <ContractRegisterForm />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: "clients", 
+        element: (
+          <ProtectedRoute>
+            <Clients />
+          </ProtectedRoute>
+        )
+      },
+      { 
+        path: "payments", 
+        element: (
+          <ProtectedRoute>
+            <Payments />
+          </ProtectedRoute>
+        )
+      },
       {
         path: "proposals",
         children: [
