@@ -1,6 +1,6 @@
 import React, {useState, useRef} from 'react';
 import { AppBar, Toolbar, Avatar, IconButton, Menu, MenuItem, Typography, Box, Button } from '@mui/material';
-import '../styles/Header.css';
+import '../../styles/Header.css';
 
 import { supabase } from '../../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
