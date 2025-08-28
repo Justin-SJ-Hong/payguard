@@ -14,6 +14,7 @@ export default function Dashboard() {
   const userName = useUserStore((state) => state.user?.name || '');
   const [emailStats, setEmailStats] = useState({ sent: 0, failed: 0 });
   const [recentProposals, setRecentProposals] = useState<any[]>([]);
+  const [receivedProposals, setReceivedProposals] = useState<any[]>([]);
   const [rowData, setRowData] = useState<any[]>([]);
   const columnDefs = [ 
     { headerName: '계약명', field: 'title', flex: 1 },
@@ -35,9 +36,9 @@ export default function Dashboard() {
       setEmailStats({ sent: 2, failed: 0 });
     };
 
-    // 최근 제안서 가져오기
+    // 최근 제안서 가져오기 (내가 보낸 제안)
     const fetchRecentProposals = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('proposals')
         .select('*')
         .order('created_at', { ascending: false })
@@ -48,8 +49,27 @@ export default function Dashboard() {
       }
     };
 
+    // 받은 제안서 가져오기 (내 이메일이 수신자)
+    const fetchReceivedProposals = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      const userEmail = (user?.email || '').trim().toLowerCase();
+      if (!userEmail) return;
+
+      const { data } = await supabase
+        .from('proposals')
+        .select('*')
+        .ilike('email', userEmail) // 대소문자 무시
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (data) {
+        setReceivedProposals(data);
+      }
+    };
+
     fetchEmailStats();
     fetchRecentProposals();
+    fetchReceivedProposals();
 
     setRowData([
       { title: '디자인작업', client: 'John', status: '진행중', amount: 500, lastDate: '2025-06-04' },
@@ -105,6 +125,37 @@ export default function Dashboard() {
         />
       </div>
       <Button variant="outlined" color="success">+ 새 계약 만들기</Button>
+
+      {/* 받은 제안서 */}
+      {receivedProposals.length > 0 && (
+        <Box className="mt-8">
+          <Typography variant="h6" className="font-bold mb-2">받은 제안서</Typography>
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            {receivedProposals.map((proposal, index) => (
+              <Box 
+                key={proposal.id || index}
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5',
+                    borderColor: '#1976d2'
+                  }
+                }}
+                onClick={() => handleProposalClick(proposal.id)}
+              >
+                <Typography variant="subtitle1" fontWeight="bold">{proposal.title}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  보낸 사람: {proposal.sender_name || proposal.sender_email} • ${proposal.total_amount} • {proposal.status}
+                </Typography>
+              </Box>
+            ))}
+          </Paper>
+        </Box>
+      )}
 
       {/* 최근 제안서 */}
       {/* {recentProposals.length > 0 && (
