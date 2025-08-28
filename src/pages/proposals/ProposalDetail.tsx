@@ -59,16 +59,25 @@ function ProposalDetail() {
       
       console.log("user?.email:", user?.email);
       console.log("proposal data:", data);
-      // 3. 이메일 비교
-      if (!user) {
+      // 3. 이메일 비교 (트림/소문자 처리, 발신자/수신자 모두 접근 허용)
+      const userEmail = (user?.email || '').trim().toLowerCase();
+      const recipientEmail = (data?.email || '').trim().toLowerCase();
+      const senderEmail = (data?.sender_email || '').trim().toLowerCase();
+
+      if (!userEmail) {
         setAccessDenied("not_logged_in");
-      } else if (data && user.email !== data.email) {
-        setAccessDenied("wrong_user");
-      } else if (data && user.email === data.email) {
-        setProposal(data);
-      } else {
-        setAccessDenied("wrong_user");
+        return;
       }
+
+      const isAllowed = userEmail === recipientEmail || userEmail === senderEmail;
+
+      if (!isAllowed) {
+        setAccessDenied("wrong_user");
+        return;
+      }
+
+      setAccessDenied(null);
+      setProposal(data);
 
       // 4. 관련 테이블 데이터 병렬로 가져오기
       const [platformRes, toolRes, midpayRes, attachmentsRes] = await Promise.all([
