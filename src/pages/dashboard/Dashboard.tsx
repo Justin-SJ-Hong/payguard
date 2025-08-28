@@ -58,7 +58,7 @@ export default function Dashboard() {
       const { data } = await supabase
         .from('proposals')
         .select('*')
-        .ilike('email', userEmail) // 대소문자 무시
+        .eq('sender_email', userEmail) // 대소문자 무시
         .order('created_at', { ascending: false })
         .limit(10);
 
