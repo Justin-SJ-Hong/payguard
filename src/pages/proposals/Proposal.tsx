@@ -75,15 +75,19 @@ function Proposal() {
     try {
       console.log("제출된 제안:", data);
       
-      // 제안서 데이터를 Supabase에 저장
-      // 1. 제안서 메인 데이터 저장
+      // 🚀 제안서 데이터를 Supabase에 저장
+      // 1. 사용자 정보와 제안서 메인 데이터를 병렬로 처리
       const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('사용자 인증 정보를 찾을 수 없습니다.');
+      }
 
       // profiles 테이블에서 사용자 정보 가져오기
       const { data: profile } = await supabase
         .from('profiles')
         .select('name, email')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       const { data: proposalData, error: dbError } = await supabase
@@ -130,99 +134,129 @@ function Proposal() {
 
       const proposalId = proposalData.id;
 
-      // 2. 중간지급 데이터 저장
+      // 🚀 2. 중간지급 데이터 저장 (병렬 처리를 위해 Promise 배열에 추가)
+      let midpayData: Array<{
+        proposal_id: string;
+        pay_order: number;
+        amount: number;
+        pay_date: string;
+      }> = [];
+      
       if (data.use_midpay && (data.midpayAmounts ?? []).length > 0) {
-        const midpayData = (data.midpayAmounts ?? []).map((item, index) => ({
+        midpayData = (data.midpayAmounts ?? []).map((item, index) => ({
           proposal_id: proposalId,
           pay_order: index + 1,
           amount: Number(item?.amount) || 0,
           pay_date: item?.date || new Date().toISOString().split('T')[0]
         }));
+      }
 
-        if(midpayData.length > 0) {
-          const { error: midpayError } = await supabase
-            .from('proposal_midpays')
-            .insert(midpayData);
+      // 🚀 3. 플랫폼과 도구 데이터 준비 (병렬 처리를 위해 Promise 배열에 추가)
+      let platformData: Array<{
+        proposal_id: string;
+        platform: string;
+      }> = [];
+      
+      if ((data.platforms ?? []).length > 0) {
+        platformData = (data.platforms ?? []).map(platform => ({
+          proposal_id: proposalId,
+          platform
+        }));
+      }
 
-          if (midpayError) {
-            throw new Error('중간지급 데이터 저장에 실패했습니다: ' + midpayError.message);
+      let toolData: Array<{
+        proposal_id: string;
+        tool: string;
+      }> = [];
+      
+      if ((data.tools ?? []).length > 0) {
+        toolData = (data.tools ?? []).map(tool => ({
+          proposal_id: proposalId,
+          tool
+        }));
+      }
+
+      // 🚀 4. 모든 하위 데이터를 병렬로 저장
+      const subDataPromises = [];
+
+      if (midpayData.length > 0) {
+        subDataPromises.push(
+          supabase.from('proposal_midpays').insert(midpayData)
+        );
+      }
+
+      if (platformData.length > 0) {
+        subDataPromises.push(
+          supabase.from('proposal_platforms').insert(platformData)
+        );
+      }
+
+      if (toolData.length > 0) {
+        subDataPromises.push(
+          supabase.from('proposal_tools').insert(toolData)
+        );
+      }
+
+      // 병렬로 하위 데이터 저장
+      if (subDataPromises.length > 0) {
+        const subDataResults = await Promise.all(subDataPromises);
+        
+        // 에러 체크
+        for (const result of subDataResults) {
+          if (result.error) {
+            throw new Error('하위 데이터 저장에 실패했습니다: ' + result.error.message);
           }
         }
       }
 
-      // 3. 플랫폼 데이터 저장
-      if ((data.platforms ?? []).length > 0) {
-        const platformData = (data.platforms ?? []).map(platform => ({
-          proposal_id: proposalId,
-          platform
-        }));
-
-        const { error: platformError } = await supabase
-          .from('proposal_platforms')
-          .insert(platformData);
-
-        if (platformError) {
-          throw new Error('플랫폼 데이터 저장에 실패했습니다: ' + platformError.message);
-        }
-      }
-
-      // 4. 도구 데이터 저장
-      if ((data.tools ?? []).length > 0) {
-        const toolData = (data.tools ?? []).map(tool => ({
-          proposal_id: proposalId,
-          tool
-        }));
-
-        const { error: toolError } = await supabase
-          .from('proposal_tools')
-          .insert(toolData);
-
-        if (toolError) {
-          throw new Error('도구 데이터 저장에 실패했습니다: ' + toolError.message);
-        }
-      }
-
-      // 5. 첨부파일 저장 (Storage + DB)
+      // 🚀 5. 첨부파일을 병렬로 업로드 (파일이 여러 개일 때)
       if ((data.attachments ?? []).length > 0) {
-        const { data: { user } } = await supabase.auth.getUser();
-        const userId = user?.id;
+        const userId = user.id; // 이미 위에서 가져온 user 사용
+        const fileUploadPromises: Promise<void>[] = [];
 
         for (const file of (data.attachments ?? [])) {
           // 파일명 안전하게 처리 (한글, 특수문자 등)
           const fileExtension = file.name.split('.').pop();
-          const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
           const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExtension}`;
-          
-          // Storage에 파일 업로드 (안전한 파일명 사용)
           const filePath = `${userId}/${proposalId}/${safeFileName}`;
-          const { error: uploadError } = await supabase.storage
-            .from('proposal-attachments')
-            .upload(filePath, file);
+          
+          // 파일 업로드와 메타데이터 저장을 하나의 Promise로 묶기
+          const fileUploadPromise = (async () => {
+            // Storage에 파일 업로드
+            const { error: uploadError } = await supabase.storage
+              .from('proposal-attachments')
+              .upload(filePath, file);
 
-          if (uploadError) {
-            throw new Error('파일 업로드에 실패했습니다: ' + uploadError.message);
-          }
+            if (uploadError) {
+              throw new Error('파일 업로드에 실패했습니다: ' + uploadError.message);
+            }
 
-          // 파일 URL 생성
-          const { data: { publicUrl } } = supabase.storage
-            .from('proposal-attachments')
-            .getPublicUrl(filePath);
+            // 파일 URL 생성
+            const { data: { publicUrl } } = supabase.storage
+              .from('proposal-attachments')
+              .getPublicUrl(filePath);
 
-          // DB에 첨부파일 메타데이터 저장 (원본 파일명 보존)
-          const { error: attachmentError } = await supabase
-            .from('proposal_attachments')
-            .insert([{
-              proposal_id: proposalId,
-              file_url: publicUrl,
-              file_name: file.name, // 원본 파일명 저장
-              file_type: file.type,
-              uploaded_at: new Date().toISOString()
-            }]);
+            // DB에 첨부파일 메타데이터 저장
+            const { error: attachmentError } = await supabase
+              .from('proposal_attachments')
+              .insert([{
+                proposal_id: proposalId,
+                file_url: publicUrl,
+                file_name: file.name,
+                file_type: file.type,
+                uploaded_at: new Date().toISOString()
+              }]);
 
-          if (attachmentError) {
-            throw new Error('첨부파일 메타데이터 저장에 실패했습니다: ' + attachmentError.message);
-          }
+            if (attachmentError) {
+              throw new Error('첨부파일 메타데이터 저장에 실패했습니다: ' + attachmentError.message);
+            }
+          })();
+
+          fileUploadPromises.push(fileUploadPromise);
         }
+
+        // 🚀 모든 파일을 병렬로 업로드
+        await Promise.all(fileUploadPromises);
       }
 
       // 이메일 전송 데이터 준비
