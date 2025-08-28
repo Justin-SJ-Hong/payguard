@@ -179,7 +179,7 @@ function ProposalDetail() {
           contract_title: proposal?.title || '',
           contract_amount: `${proposal?.total_amount} ${proposal?.currency}`,
           contract_period: `${proposal?.start_date} ~ ${proposal?.end_date}`,
-          signing_url: `${appUrl}contracts/${contractId}/sign?role=client`,
+          signing_url: `https://payguard.kro.kr/contracts/${contractId}/sign?role=client`,
           proposal_id: id
         }
       };
@@ -195,7 +195,7 @@ function ProposalDetail() {
           contract_title: proposal?.title || '',
           contract_amount: `${proposal?.total_amount} ${proposal?.currency}`,
           contract_period: `${proposal?.start_date} ~ ${proposal?.end_date}`,
-          signing_url: `${appUrl}contracts/${contractId}/sign?role=freelancer`,
+          signing_url: `https://payguard.kro.kr/contracts/${contractId}/sign?role=freelancer`,
           proposal_id: id
         }
       };
