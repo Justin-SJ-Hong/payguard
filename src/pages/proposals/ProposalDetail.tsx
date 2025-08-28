@@ -15,6 +15,7 @@ import {
   InputLabel,
   FormControlLabel,
   Checkbox,
+  LinearProgress,
 } from '@mui/material'
 import { supabase } from "../../lib/supabase";
 import { emailService, ProposalEmailData } from "../../services/emailService";
@@ -38,6 +39,8 @@ function ProposalDetail() {
   const [error, setError] = useState<string | null>(null);
   const [accessDenied, setAccessDenied] = useState<null | "not_logged_in" | "wrong_user">(null);
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
+  const [isAccepting, setIsAccepting] = useState(false);
+  const [acceptStatus, setAcceptStatus] = useState<string>('');
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -83,7 +86,7 @@ function ProposalDetail() {
       setAccessDenied(null);
       setProposal(data);
 
-      // 4. 관련 테이블 데이터 병렬로 가져오기
+      // 🚀 4. 관련 테이블 데이터 병렬로 가져오기 (이미 최적화됨)
       const [platformRes, toolRes, midpayRes, attachmentsRes] = await Promise.all([
         supabase.from("proposal_platforms").select("*").eq("proposal_id", id),
         supabase.from("proposal_tools").select("*").eq("proposal_id", id),
@@ -111,62 +114,81 @@ function ProposalDetail() {
   }, [id]);
 
   const handleAccept = async () => {
+    // Optimistic UI Update: 즉시 UI 반응!
+    setIsAccepting(true);
+    setAcceptStatus('처리 중...');
+    
     try {
-      // 1. 제안서 상태를 'pending_signature'로 업데이트
-      const { error: updateError } = await supabase
-        .from('proposals')
-        .update({ status: 'pending_signature' })
-        .eq('id', id);
-  
-      if (updateError) {
-        throw new Error('제안서 상태 업데이트 실패: ' + updateError.message);
-      }
-  
-      // 2. contracts 테이블에 계약 정보 저장
-      const { data: contractData, error: contractError } = await supabase
-        .from("contracts")
-        .insert([{
-          proposal_id: id,
-          status: "pending_signature",
-          client_name: proposal?.client_name,
-          client_email: proposal?.email,
-          freelancer_name: proposal?.sender_name,
-          freelancer_email: proposal?.sender_email,
-          trade_type: proposal?.trade_type,
-          title: proposal?.title,
-          total_amount: proposal?.total_amount,
-          currency: proposal?.currency,
-          start_date: proposal?.start_date,
-          end_date: proposal?.end_date,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-  
-      if (contractError) {
-        throw new Error('계약 저장 실패: ' + contractError.message);
-      }
-  
-      // 3. 자체 서명 인터페이스 열기
-      // openSigningInterface(contractData.id);
-      // 3. 양측에 서명 요청 이메일 발송
+      // 🚀 병렬 처리: 제안서 상태 업데이트와 계약 생성을 동시에 처리
+      setAcceptStatus('계약 생성 중...');
+      
+      const [updateResult, contractResult] = await Promise.all([
+        // 1. 제안서 상태 업데이트
+        supabase
+          .from('proposals')
+          .update({ status: 'pending_signature' })
+          .eq('id', id),
+        
+        // 2. contracts 테이블에 계약 정보 저장
+        supabase
+          .from("contracts")
+          .insert([{
+            proposal_id: id,
+            status: "pending_signature",
+            client_name: proposal?.client_name,
+            client_email: proposal?.email,
+            freelancer_name: proposal?.sender_name,
+            freelancer_email: proposal?.sender_email,
+            trade_type: proposal?.trade_type,
+            title: proposal?.title,
+            total_amount: proposal?.total_amount,
+            currency: proposal?.currency,
+            start_date: proposal?.start_date,
+            end_date: proposal?.end_date,
+            created_at: new Date().toISOString()
+          }])
+          .select()
+          .single()
+      ]);
 
-      await sendSigningRequestEmails(contractData.id);
+      // 에러 체크
+      if (updateResult.error) {
+        throw new Error('제안서 상태 업데이트 실패: ' + updateResult.error.message);
+      }
+      if (contractResult.error) {
+        throw new Error('계약 저장 실패: ' + contractResult.error.message);
+      }
+
+      const contractData = contractResult.data;
       
-      // 4. 성공 메시지 표시
-      alert('계약이 수락되었습니다! 양측에 서명 요청 이메일이 발송되었습니다.');
+      // 3. 성공 처리 (이메일은 백그라운드로 분리)
+      setAcceptStatus('수락 완료!');
+      setProposal(prev => prev ? { ...prev, status: 'pending_signature' } : null);
       
-      // 5. 대시보드로 이동
-      window.location.href = '/dashboard';
+      // 🚀 이메일 발송을 백그라운드로 분리 (사용자 대기 없음)
+      sendSigningRequestEmails(contractData.id).catch(error => {
+        console.error('이메일 발송 실패:', error);
+        // 이메일 실패는 계약 수락에 영향을 주지 않음
+      });
+      
+      // 4. 1초 후 대시보드로 이동 (시간 단축)
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1000);
+      
     } catch (error) {
       console.error('계약 수락 처리 실패:', error);
+      // 실패 시 원래 상태로 되돌리기
+      setAcceptStatus('오류 발생');
+      setProposal(prev => prev ? { ...prev, status: 'pending' } : null);
+      setIsAccepting(false);
       alert('계약 수락에 실패했습니다: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
   const sendSigningRequestEmails = async (contractId: string) => {
     try {
-      const appUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5173';
+      // const appUrl = import.meta.env.VITE_APP_URL || 'http://localhost:5173';
       
       // 클라이언트에게 서명 요청 이메일
       const clientEmailData = {
@@ -180,7 +202,7 @@ function ProposalDetail() {
           contract_amount: `${proposal?.total_amount} ${proposal?.currency}`,
           contract_period: `${proposal?.start_date} ~ ${proposal?.end_date}`,
           signing_url: `https://payguard.kro.kr/contracts/${contractId}/sign?role=client`,
-          proposal_id: id
+          proposal_id: id,
         }
       };
   
@@ -200,8 +222,8 @@ function ProposalDetail() {
         }
       };
   
-      // 양측 이메일 동시 발송
-      await Promise.all([
+            // 🚀 양측 이메일 동시 발송 (이미 병렬 처리됨)
+      const emailPromises = [
         fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -212,8 +234,18 @@ function ProposalDetail() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(freelancerEmailData)
         })
+      ];
+
+      // 타임아웃 설정으로 이메일 발송 속도 향상
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('이메일 발송 타임아웃')), 10000)
+      );
+
+      await Promise.race([
+        Promise.all(emailPromises),
+        timeoutPromise
       ]);
-  
+
       console.log('서명 요청 이메일 발송 완료');
       
     } catch (error) {
@@ -948,17 +980,30 @@ function ProposalDetail() {
               variant="contained"
               color="success"
               onClick={handleAccept}
+              disabled={isAccepting}
+              startIcon={isAccepting ? <CircularProgress size={20} /> : null}
             >
-              ✅ 수락
+              {isAccepting ? '🔄 처리 중...' : '✅ 수락'}
             </Button>
             <Button
               variant="outlined"
               color="error"
               onClick={handleRejectClick}
+              disabled={isAccepting}
             >
               ❌ 거절
             </Button>
           </>
+        )}
+        
+        {/* 수락 처리 상태 표시 */}
+        {isAccepting && (
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1, textAlign: 'center' }}>
+            <Typography variant="body1" color="info.contrastText" sx={{ mb: 1 }}>
+              🔄 {acceptStatus}
+            </Typography>
+            <LinearProgress />
+          </Box>
         )}
       </Box>
 
