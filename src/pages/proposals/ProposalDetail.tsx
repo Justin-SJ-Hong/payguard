@@ -319,7 +319,7 @@ function ProposalDetail() {
             client_email: proposal?.email,
             sender_name: proposal?.sender_name,
             sender_email: proposal?.sender_email,
-            trade_type: proposal?.trade_type, // 거래 유형 추가
+            trade_type: proposal?.trade_type === "KR-KR" ? "한국-한국" : proposal?.trade_type === "KR-FR" ? "한국-해외" : "해외-해외", // 거래 유형 한국어
             title: proposal?.title,
             description: proposal?.description,
             scope: proposal?.scope,
