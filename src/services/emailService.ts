@@ -15,6 +15,7 @@ export interface ProposalEmailData {
   clientEmail: string;
   title: string;
   description: string;
+  tradeType: string;
   startDate: string;
   endDate: string;
   totalAmount: number;
@@ -47,6 +48,7 @@ export const emailService = {
       clientEmail: data.clientEmail,
       title: data.title,
       description: data.description,
+      tradeType: data.tradeType,
       startDate: data.startDate,
       endDate: data.endDate,
       totalAmount: `${data.totalAmount} ${data.currency}`,

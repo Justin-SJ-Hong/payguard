@@ -89,6 +89,7 @@ export const generateContractPDF = async (contractId: string, proposalId: string
             freelancer_signature_date: formatDateToCustom(contract.freelancer_signature_date),
             sender_name: proposal.sender_name,
             sender_email: proposal.sender_email,
+            trade_type: proposal.trade_type,
             title: proposal.title,
             description: proposal.description,
             scope: proposal.scope,

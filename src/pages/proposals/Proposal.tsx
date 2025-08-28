@@ -56,6 +56,7 @@ function Proposal() {
       midpay_count: 0,
       midpayAmounts: [],
       use_midpay: false,
+      trade_type: "KR-KR", // 기본값으로 한국-한국 설정
     },
   });
 
@@ -93,6 +94,7 @@ function Proposal() {
           // client_name: data.clientName,
           client_name: data.client_name,
           email: data.email,
+          trade_type: data.trade_type,
           title: data.title,
           description: data.description,
           // start_date: data.workPeriod?.start,
@@ -231,6 +233,7 @@ function Proposal() {
         senderEmail: user?.email || '',
         title: data.title,
         description: data.description || '',
+        tradeType: data.trade_type,
         // startDate: data.workPeriod?.start || '',
         // endDate: data.workPeriod?.end || '',
         startDate: data.start_date || '',
@@ -332,6 +335,41 @@ function Proposal() {
                 <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 1 }}>
                   👥 상대방 정보
                 </Typography>
+                
+                {/* 거래 유형 선택 */}
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                  거래 유형을 선택해주세요
+                </Typography>
+                <Box sx={{ mb: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={watch("trade_type") === "KR-KR"}
+                        onChange={() => methods.setValue("trade_type", "KR-KR")}
+                      />
+                    }
+                    label="한국-한국"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={watch("trade_type") === "KR-FR"}
+                        onChange={() => methods.setValue("trade_type", "KR-FR")}
+                      />
+                    }
+                    label="한국-해외"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={watch("trade_type") === "FR-FR"}
+                        onChange={() => methods.setValue("trade_type", "FR-FR")}
+                      />
+                    }
+                    label="해외-해외"
+                  />
+                </Box>
+                
                 <TextField
                   fullWidth
                   size="small"

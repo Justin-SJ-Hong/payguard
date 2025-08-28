@@ -119,6 +119,7 @@ function ProposalDetail() {
           client_email: proposal?.email,
           freelancer_name: proposal?.sender_name,
           freelancer_email: proposal?.sender_email,
+          trade_type: proposal?.trade_type,
           title: proposal?.title,
           total_amount: proposal?.total_amount,
           currency: proposal?.currency,
@@ -305,6 +306,7 @@ function ProposalDetail() {
             client_email: proposal?.email,
             sender_name: proposal?.sender_name,
             sender_email: proposal?.sender_email,
+            trade_type: proposal?.trade_type, // 거래 유형 추가
             title: proposal?.title,
             description: proposal?.description,
             scope: proposal?.scope,
@@ -449,6 +451,7 @@ function ProposalDetail() {
         senderEmail: proposal.sender_email || '',
         title: proposal.title,
         description: proposal.description || '',
+        tradeType: proposal.trade_type,
         // startDate: proposal.workPeriod?.start || '',
         // endDate: proposal.workPeriod?.end || '',
         startDate: proposal.start_date || '',
@@ -522,6 +525,7 @@ function ProposalDetail() {
           allow_resubmit: rejectionData.allowResubmit ? '예' : '아니오',
           resubmit_deadline: rejectionData.resubmitDeadline || '',
           proposal_id: id,
+          trade_type: proposal?.trade_type,
         }
       };
 
@@ -580,15 +584,6 @@ function ProposalDetail() {
 
   return (
     <Box className="p-6">
-      {/* <Typography><strong>클라이언트:</strong> {proposal.clientName} ({proposal.email})</Typography>
-      <Typography><strong>제목:</strong> {proposal.title}</Typography>
-      <Typography><strong>설명:</strong> {proposal.description}</Typography>
-      <Typography><strong>계약 기간:</strong> {proposal.workPeriod?.start} ~ {proposal.workPeriod?.end}</Typography>
-      <Typography><strong>총 금액:</strong> ${proposal.totalAmount}</Typography>
-      <Typography><strong>선불 비율:</strong> {proposal.prepayRatio}%</Typography>
-      <Typography><strong>중간 지급:</strong> {proposal.useMidpay ? `${proposal.midpayCount}회 (${proposal.midpayAmounts.map(item => item.amount).reduce((a, b) => a + b, 0)} ${proposal.currency})` : '없음'}</Typography>
-      <Typography><strong>후불 비율:</strong> {proposal.postpayRatio}%</Typography>
-      <Typography><strong>제안 메시지:</strong> {proposal.message}</Typography> */}
       <Box p={1}>
         {/* <Typography variant="h5" fontWeight="bold" gutterBottom>📝 계약 제안</Typography> */}
         <Typography variant="h5" fontWeight="bold" gutterBottom>📄 계약 제안 상세</Typography>
@@ -598,6 +593,14 @@ function ProposalDetail() {
               <Typography variant="h6" fontWeight="bold" gutterBottom>
                 👥 상대방 정보
               </Typography>
+              <TextField 
+                fullWidth
+                size="small"
+                label="거래 유형"
+                value={proposal.trade_type === "KR-KR" ? "한국-한국" : proposal.trade_type === "KR-FR" ? "한국-해외" : "해외-해외"}
+                disabled
+                sx={{ mb: 1 }}
+              />
               <TextField 
                 fullWidth
                 size="small"

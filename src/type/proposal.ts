@@ -4,6 +4,7 @@ export interface FormData {
   // clientName: string;
   client_name?: string;
   email: string;
+  trade_type: "KR-KR" | "KR-FR" | "FR-FR";
   title: string;
   description?: string;
   scope?: string;
