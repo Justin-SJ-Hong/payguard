@@ -60,9 +60,13 @@ function ProposalDetail() {
       console.log("user?.email:", user?.email);
       console.log("proposal data:", data);
       // 3. 이메일 비교 (트림/소문자 처리, 발신자/수신자 모두 접근 허용)
-      const userEmail = (user?.email || '').trim().toLowerCase();
-      const recipientEmail = (data?.email || '').trim().toLowerCase();
-      const senderEmail = (data?.sender_email || '').trim().toLowerCase();
+      // const userEmail = (user?.email || '').trim().toLowerCase();
+      // const recipientEmail = (data?.email || '').trim().toLowerCase();
+      // const senderEmail = (data?.sender_email || '').trim().toLowerCase();
+
+      const userEmail = user?.email;
+      const recipientEmail = data?.email;
+      const senderEmail = data?.sender_email;
 
       if (!userEmail) {
         setAccessDenied("not_logged_in");
