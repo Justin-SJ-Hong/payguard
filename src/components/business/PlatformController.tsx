@@ -1,6 +1,6 @@
 // src/components/PlatformController.tsx
 import { Autocomplete, TextField, Chip } from "@mui/material";
-import { Controller, useFormContext } from "react-hook-form";
+import { useProposalStore } from "../../store/proposalStore";
 
 const MAX_PLATFORMS = 10;
 
@@ -11,48 +11,33 @@ const platformOptions = [
 ];
 
 const PlatformController = () => {
-  const { control, setError, clearErrors, formState: { errors } } = useFormContext();
+  const { platforms, setPlatforms, setError, clearError, errors } = useProposalStore();
 
   return (
-    <Controller
-      name="platforms"
-      control={control}
-      defaultValue={[]}
-      rules={{
-        validate: (platforms) =>
-          platforms.length <= MAX_PLATFORMS || `최대 ${MAX_PLATFORMS}개까지만 선택할 수 있습니다.`,
+    <Autocomplete
+      options={platformOptions}
+      multiple
+      freeSolo
+      disableCloseOnSelect
+      filterSelectedOptions
+      limitTags={MAX_PLATFORMS}
+      value={platforms || []}
+      onChange={(_, newValue) => {
+        if (newValue.length > MAX_PLATFORMS) {
+          setError("platforms", `최대 ${MAX_PLATFORMS}개까지만 선택할 수 있습니다.`);
+        } else {
+          clearError("platforms");
+          setPlatforms(newValue);
+        }
       }}
-      render={({ field }) => (
-        <Autocomplete
-          options={platformOptions}
-          multiple
-          freeSolo
-          disableCloseOnSelect
-          filterSelectedOptions
-          limitTags={MAX_PLATFORMS}
-          value={field.value}
-          onChange={(_, newValue) => {
-            if (newValue.length > MAX_PLATFORMS) {
-              setError("platforms", {
-                type: "manual",
-                message: `최대 ${MAX_PLATFORMS}개까지만 선택할 수 있습니다.`,
-              });
-            } else {
-              clearErrors("platforms");
-              field.onChange(newValue);
-            }
-          }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              size="small"
-              label="계약 대상 플랫폼"
-              placeholder="입력 후 Enter"
-              error={!!errors.platforms}
-              helperText={typeof errors.platforms?.message === 'string' ? errors.platforms.message : ''}
-              // sx={{ mb: 2 }}
-            />
-          )}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          size="small"
+          label="계약 대상 플랫폼"
+          placeholder="입력 후 Enter"
+          error={!!errors.platforms}
+          helperText={errors.platforms || ''}
         />
       )}
     />

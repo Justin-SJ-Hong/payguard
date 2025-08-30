@@ -1,22 +1,21 @@
 import { useEffect } from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useProposalStore } from '../store/proposalStore';
 import formatNumber from '../utils/formatNumber';
 
 export const useTotalSplitValidation = () => {
-  const { setError, clearErrors } = useFormContext();
+  const { total_amount, prepay_ratio, postpay_ratio, midpayAmounts, currency, setError, clearError } = useProposalStore();
 
-  const totalAmount = useWatch({ name: 'totalAmount' });
-  const prepayRatio = useWatch({ name: 'prepayRatio' }) || 0;
-  const postpayRatio = useWatch({ name: 'postpayRatio' }) || 0;
-  const midpayAmounts = useWatch({ name: 'midpayAmounts' }) || [];
-  const currency = useWatch({ name: 'currency' });
+  const totalAmount = total_amount;
+  const prepayRatio = prepay_ratio || 0;
+  const postpayRatio = postpay_ratio || 0;
+  const midpayAmountsArray = midpayAmounts || [];
 
   useEffect(() => {
     if (!totalAmount || totalAmount <= 0) return;
 
     const prepayAmount = Math.floor((totalAmount * prepayRatio) / 100);
     const postpayAmount = Math.floor((totalAmount * postpayRatio) / 100);
-    const midpayTotal = midpayAmounts.reduce((sum: any, item: any) => {
+    const midpayTotal = midpayAmountsArray.reduce((sum: number, item: any) => {
       const amount = Number(item.amount);
       return sum + (isNaN(amount) ? 0 : amount);
     }, 0);
@@ -24,20 +23,17 @@ export const useTotalSplitValidation = () => {
     const splitSum = prepayAmount + midpayTotal + postpayAmount;
 
     if (splitSum !== totalAmount) {
-      setError('totalAmount', {
-        type: 'validate',
-        message: `총 분할 금액 (${formatNumber(splitSum)} ${currency})가 총 계약 금액과 일치하지 않습니다.`,
-      });
+      setError('total_amount', `총 분할 금액 (${formatNumber(splitSum)} ${currency})가 총 계약 금액과 일치하지 않습니다.`);
     } else {
-      clearErrors('totalAmount');
+      clearError('total_amount');
     }
-  }, [totalAmount, prepayRatio, postpayRatio, midpayAmounts, setError, clearErrors, currency]);
+  }, [totalAmount, prepayRatio, postpayRatio, midpayAmountsArray, setError, clearError, currency]);
 
   return {
     totalAmount,
     prepayRatio,
     postpayRatio,
-    midpayAmounts,
+    midpayAmounts: midpayAmountsArray,
     currency,
   };
 };

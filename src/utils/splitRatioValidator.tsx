@@ -1,29 +1,23 @@
 import { useEffect } from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useProposalStore } from '../store/proposalStore';
 /**
  * 선불, 후불 비율 검증
  * @returns null
  */
 const SplitRatioValidator = () => {
-  const { setError, clearErrors } = useFormContext();
-  const prepay = Number(useWatch({ name: 'prepayRatio' }) ?? 0);
-  const postpay = Number(useWatch({ name: 'postpayRatio' }) ?? 0);
+  const { prepay_ratio, postpay_ratio, setError, clearError } = useProposalStore();
+  const prepay = Number(prepay_ratio ?? 0);
+  const postpay = Number(postpay_ratio ?? 0);
 
   useEffect(() => {
     if (prepay + postpay > 100) {
-      setError('prepayRatio', {
-        type: 'validate',
-        message: '선불 + 후불 비율의 합이 100을 초과할 수 없습니다.',
-      });
-      setError('postpayRatio', {
-        type: 'validate',
-        message: '선불 + 후불 비율의 합이 100을 초과할 수 없습니다.',
-      });
+      setError('prepay_ratio', '선불 + 후불 비율의 합이 100을 초과할 수 없습니다.');
+      setError('postpay_ratio', '선불 + 후불 비율의 합이 100을 초과할 수 없습니다.');
     } else {
-      clearErrors('prepayRatio');
-      clearErrors('postpayRatio');
+      clearError('prepay_ratio');
+      clearError('postpay_ratio');
     }
-  }, [prepay, postpay, setError, clearErrors]);
+  }, [prepay, postpay, setError, clearError]);
 
   return null;
 };

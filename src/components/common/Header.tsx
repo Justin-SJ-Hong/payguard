@@ -78,7 +78,7 @@ function Header() {
                     {/* 로고 + 회사명 */}
                     <Box
                     onClick={handleLogoClick}
-                    className="flex items-center gap-2 w-3/10"
+                    className="flex items-center gap-2 w-3/10 cursor-pointer"
                     >
                         <img src="/payguard.png" alt="Payguard" className='h-40 w-40' />
                         <Typography variant="h6" sx={{ fontFamily: 'Oswald', color: '#19764D', fontWeight: 'bold', fontSize: 24 }}>
