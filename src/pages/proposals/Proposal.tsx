@@ -491,6 +491,7 @@ function Proposal() {
                       />
                     }
                     label="한국-한국"
+                    title="한국 내에서 이루어지는 거래 (원화 결제, 국내 법규 적용)"
                   />
                   <FormControlLabel
                     control={
@@ -500,6 +501,7 @@ function Proposal() {
                       />
                     }
                     label="한국-해외"
+                    title="한국과 해외 간의 거래 (외화 결제, 국제법 적용)"
                   />
                   <FormControlLabel
                     control={
@@ -509,6 +511,7 @@ function Proposal() {
                       />
                     }
                     label="해외-해외"
+                    title="해외에서 이루어지는 거래 (외화 결제, 현지 법규 적용)"
                   />
                 </Box>
                 
@@ -528,6 +531,9 @@ function Proposal() {
                   error={!!errors.client_name}
                   helperText={errors.client_name}
                   sx={{ mb: 1 }}
+                  inputProps={{
+                    title: "계약 상대방의 이름을 입력해주세요 (회사명 또는 개인명)"
+                  }}
                 />
                 <TextField
                   fullWidth
@@ -544,6 +550,9 @@ function Proposal() {
                   }}
                   error={!!errors.email}
                   helperText={errors.email}
+                  inputProps={{
+                    title: "계약 상대방의 이메일 주소를 입력해주세요 (제안서 전송용)"
+                  }}
                 />
               </Box>
 
@@ -567,6 +576,9 @@ function Proposal() {
                   error={!!errors.title}
                   helperText={errors.title}
                   sx={{ mb: 1 }}
+                  inputProps={{
+                    title: "프로젝트의 간단하고 명확한 제목을 입력해주세요 (예: 웹사이트 개발, 앱 제작 등)"
+                  }}
                 />
                 <TextField
                   fullWidth
@@ -576,16 +588,29 @@ function Proposal() {
                   rows={7}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  inputProps={{
+                    title: "프로젝트의 목적, 배경, 주요 기능 등을 상세히 설명해주세요"
+                  }}
                 />
               </Box>
 
               <Box className="flex-2">
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="bold" 
+                  gutterBottom
+                  title="프로젝트에서 사용할 플랫폼과 도구를 선택해주세요. 각각 최대 10개까지 선택 가능합니다."
+                >
                   🧰 계약 대상 플랫폼/도구 (각각 10개까지 선택 가능)
                 </Typography>
                 <PlatformController />
                 <ToolController />
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="bold" 
+                  gutterBottom
+                  title="프로젝트에서 수행할 구체적인 작업 내용과 범위를 정의해주세요"
+                >
                   📋 작업 범위
                 </Typography>
                 <TextField
@@ -605,6 +630,9 @@ function Proposal() {
                   }}
                   error={!!errors.scope}
                   helperText={errors.scope}
+                  inputProps={{
+                    title: "구체적인 작업 단계, 포함/제외 사항, 산출물 등을 상세히 기술해주세요"
+                  }}
                 />
               </Box>
             </Box>
@@ -613,7 +641,12 @@ function Proposal() {
           <Paper variant="outlined" sx={{ p: 1, mb: 1 }}>
             <Box className={`flex flex-col sm:flex-row gap-1 ${!useMidpay || !(midpayCount ?? 0) ? 'w-full' : ''}`}>
               <Box className={useMidpay && (midpayCount ?? 0) > 0 ? "flex-1" : "w-full"}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="bold" 
+                  gutterBottom
+                  title="프로젝트의 시작일과 종료일, 그리고 지급 조건을 설정해주세요"
+                >
                   ⏰ 작업 기간 / 중간 지급
                 </Typography>
                 <Box className="flex flex-col sm:flex-row justify-center">
@@ -627,7 +660,8 @@ function Proposal() {
                     helperText={errors.start_date}
                     inputProps={{
                       pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}",
-                      maxLength: 10
+                      maxLength: 10,
+                      title: "프로젝트 시작 예정일을 YYYY-MM-DD 형식으로 입력해주세요"
                     }}
                     onChange={(e) => {
                       let value = e.target.value;
@@ -653,7 +687,8 @@ function Proposal() {
                     helperText={errors.end_date}
                     inputProps={{
                       pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}",
-                      maxLength: 10
+                      maxLength: 10,
+                      title: "프로젝트 완료 예정일을 YYYY-MM-DD 형식으로 입력해주세요"
                     }}
                     onChange={(e) => {
                       let value = e.target.value;
@@ -681,6 +716,9 @@ function Proposal() {
                       }}
                       error={!!errors.total_amount}
                       helperText={errors.total_amount}
+                      inputProps={{
+                        title: "프로젝트 전체 계약 금액을 숫자로 입력해주세요 (콤마는 자동으로 추가됩니다)"
+                      }}
                     />
                   </Box>
                   <Box className="flex-1">
@@ -692,10 +730,11 @@ function Proposal() {
                         label="통화"
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value)}
+                        title="계약 금액의 통화를 선택해주세요"
                       >
-                        <MenuItem value="USD ($)">USD ($)</MenuItem>
-                        <MenuItem value="EUR (€)">EUR (€)</MenuItem>
-                        <MenuItem value="KRW (₩)">KRW (₩)</MenuItem>
+                        <MenuItem value="USD ($)" title="미국 달러">USD ($)</MenuItem>
+                        <MenuItem value="EUR (€)" title="유로">EUR (€)</MenuItem>
+                        <MenuItem value="KRW (₩)" title="한국 원화">KRW (₩)</MenuItem>
                       </Select>
                     </FormControl>
                   </Box>
@@ -732,6 +771,9 @@ function Proposal() {
                       }}
                       error={!!errors.prepay_ratio}
                       helperText={errors.prepay_ratio}
+                      inputProps={{
+                        title: "프로젝트 시작 전에 받을 선불 금액의 비율을 퍼센트로 입력해주세요 (0-100%)"
+                      }}
                     />
 
                     <TextField
@@ -748,7 +790,8 @@ function Proposal() {
                       helperText={errors.first_pay_date}
                       inputProps={{
                         pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}",
-                        maxLength: 10
+                        maxLength: 10,
+                        title: "선불 금액을 받을 예정일을 YYYY-MM-DD 형식으로 입력해주세요"
                       }}
                       onChange={(e) => {
                         let value = e.target.value;
@@ -791,6 +834,9 @@ function Proposal() {
                         flex: !useMidpay ? 'none' : 1,
                         width: !useMidpay ? '25%' : 'auto'
                       }}
+                      inputProps={{
+                        title: "프로젝트 완료 후에 받을 후불 금액의 비율을 퍼센트로 입력해주세요 (0-100%)"
+                      }}
                     />
 
                     <TextField
@@ -807,7 +853,8 @@ function Proposal() {
                       helperText={errors.last_pay_date}
                       inputProps={{
                         pattern: "[0-9]{4}-[0-9]{2}-[0-9]{2}",
-                        maxLength: 10
+                        maxLength: 10,
+                        title: "후불 금액을 받을 예정일을 YYYY-MM-DD 형식으로 입력해주세요"
                       }}
                       onChange={(e) => {
                         let value = e.target.value;
@@ -839,12 +886,18 @@ function Proposal() {
                       📊 비율 합계: {(Number(watchedPrepayRatio) || 0) + (Number(watchedPostpayRatio) || 0) + (localMidpayRatio || 0)}%
                     </span>
                     {watchedTotalAmount > 0 && (Number(watchedPrepayRatio) || 0) + (Number(watchedPostpayRatio) || 0) + (localMidpayRatio || 0) !== 100 && (
-                      <span style={{ color: '#f57c00', fontWeight: 'bold' }}>
+                      <span 
+                        style={{ color: '#f57c00', fontWeight: 'bold' }}
+                        title="선불, 중간지급, 후불 비율의 합계가 100%가 되어야 제출할 수 있습니다"
+                      >
                         ⚠️ 100%가 되어야 합니다
                       </span>
                     )}
                     {watchedTotalAmount > 0 && (Number(watchedPrepayRatio) || 0) + (Number(watchedPostpayRatio) || 0) + (localMidpayRatio || 0) === 100 && (
-                      <span style={{ color: '#4caf50', fontWeight: 'bold' }}>
+                      <span 
+                        style={{ color: '#4caf50', fontWeight: 'bold' }}
+                        title="모든 지급 비율이 올바르게 설정되었습니다. 이제 제출할 수 있습니다!"
+                      >
                         ✅ 완벽합니다!
                       </span>
                     )}
@@ -918,6 +971,7 @@ function Proposal() {
                       />
                     }
                     label="중간 지급 사용"
+                    title="프로젝트 진행 중에 단계별로 지급받을 수 있는 옵션입니다. 체크하면 중간 지급 설정이 활성화됩니다."
                   />
                   {useMidpay && (
                     <Box className="flex-1" sx={{ mt: 1 }}>
@@ -928,6 +982,9 @@ function Proposal() {
                         type="number"
                         value={midpay_count || 0}
                         onChange={(e) => setMidpayCount(Number(e.target.value))}
+                        inputProps={{
+                          title: "프로젝트 진행 중에 지급받을 횟수를 입력해주세요"
+                        }}
                       />
                     </Box>
                   )}
@@ -960,7 +1017,12 @@ function Proposal() {
           <Paper variant="outlined" sx={{ p: 1, mb: 1}}>
             <Box className="flex flex-row gap-1">
               <Box className="flex-1">
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="bold" 
+                  gutterBottom
+                  title="계약서에 포함될 특별한 조건이나 약관을 정의해주세요"
+                >
                   📌 특약 (계약 조건)
                 </Typography>
                 <TextField
@@ -972,11 +1034,19 @@ function Proposal() {
                   onChange={(e) => setTerms(e.target.value)}
                   error={!!errors.terms}
                   helperText={errors.terms}
+                  inputProps={{
+                    title: "계약의 특별 조건, 보증 사항, 위약금, 분쟁 해결 방법 등을 상세히 기술해주세요"
+                  }}
                 />
               </Box>
 
               <Box className="flex-1">
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="bold" 
+                  gutterBottom
+                  title="클라이언트에게 전달할 제안 메시지를 작성해주세요"
+                >
                   제안 메시지
                 </Typography>
 
@@ -988,17 +1058,25 @@ function Proposal() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   sx={{ mb: 4 }}
+                  inputProps={{
+                    title: "프로젝트에 대한 자신감, 경험, 또는 특별한 제안 사항을 포함한 메시지를 작성해주세요"
+                  }}
                 />
               </Box>
 
               <Box className="flex-1">
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="bold" 
+                  gutterBottom
+                  title="프로젝트와 관련된 파일들을 첨부할 수 있습니다"
+                >
                   📂 파일 첨부 (최대 5개까지 가능)
                 </Typography>
-                <Typography>
+                <Typography title="지원되는 이미지 파일 형식">
                     png, jpeg, pdf, word, ppt, excel 파일 가능합니다.
                 </Typography>
-                <Typography>
+                <Typography title="추가로 지원되는 오픈소스 오피스 프로그램">
                     오픈오피스, 리브레오피스도 지원합니다!!
                 </Typography>
                 <br />
@@ -1046,10 +1124,17 @@ function Proposal() {
               })}
               disabled={isSubmitting || !canSubmit()}
               startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
+              title={canSubmit() ? "모든 필수 정보가 입력되었습니다. 제안서를 전송합니다." : "필수 정보를 모두 입력하고 비율을 100%로 맞춰주세요."}
             >
               {isSubmitting ? '전송 중...' : '제안 보내기'}
             </Button>
-            <Button variant="outlined" color="secondary" type="reset" disabled={isSubmitting}>
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              type="reset" 
+              disabled={isSubmitting}
+              title="모든 입력 내용을 초기화하고 처음부터 다시 시작합니다"
+            >
               초기화
             </Button>
           </Box>
